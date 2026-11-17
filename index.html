@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="sba.css?v=20261123">
+  <link rel="stylesheet" href="sba.css?v=20261117b">
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
   </script>
@@ -118,21 +118,11 @@
     <section id="screen-online" class="screen">
       <div class="panel panel-small">
         <h2 data-i18n="ui.onlineTitle">Duo en ligne</h2>
-        <div class="stack">
-          <button id="btn-host" class="btn btn-primary" type="button" data-i18n="ui.create">Créer une partie</button>
-          <div class="join-row">
-            <input id="join-code" type="text" maxlength="4" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Code">
-            <button id="btn-join" class="btn btn-ghost" type="button" data-i18n="ui.join">Rejoindre</button>
-          </div>
-        </div>
-        <div id="online-code" class="online-code" hidden>
-          <span class="lbl" data-i18n="ui.yourCode">Code de la partie</span>
-          <b id="online-code-val"></b>
-          <span class="tiny muted" data-i18n="ui.shareCode"></span>
-        </div>
+        <p class="online-wait-ico" aria-hidden="true">📱 ⇄ 📱</p>
         <p id="online-status" class="muted center" aria-live="polite"></p>
         <div class="row-actions">
           <button id="btn-online-back" class="btn btn-ghost" type="button" data-i18n="ui.back">Retour</button>
+          <button id="btn-online-retry" class="btn btn-primary" type="button" data-i18n="ui.retry" hidden>Réessayer</button>
         </div>
       </div>
     </section>
@@ -260,6 +250,6 @@
       }
     }, 12000);
   </script>
-  <script type="module" src="sba.js?v=20261123"></script>
+  <script type="module" src="sba.js?v=20261117b"></script>
 </body>
 </html>

@@ -4,7 +4,7 @@
  */
 import * as THREE from 'three';
 import { createFight } from './fight.js?v=20261123';
-import { Net } from './net.js?v=20261123';
+import { Net } from './net.js?v=20261117b';
 
 const GAME_DURATION = 30; // secondes
 const STORAGE_BEST = 'sba-game-best-v1';
@@ -71,10 +71,10 @@ const I18N = {
       waterNote: 'L’abus d’alcool est dangereux pour la santé : à consommer avec modération. Et après la session, on ne conduit pas, on se fait raccompagner.',
       chooseMode: 'Choisis ton mode', modeSolo: 'Solo', modeSoloTxt: 'Une session de 30 s, puis baston au Secret Bar contre l’ordi.',
       modeLocal: 'Duo même écran', modeLocalTxt: 'Deux riders sur la même vague, puis on règle ça au bar. Chacun sa moitié d’écran.',
-      modeOnline: 'Duo en ligne', modeOnlineTxt: 'Chacun sur son téléphone, avec un code de partie.',
+      modeOnline: 'Duo en ligne', modeOnlineTxt: 'Chacun sur son téléphone : lancez-le tous les deux, la connexion est automatique.',
       player1: 'Joueur 1', player2: 'Joueur 2', chooseP1: 'Joueur 1 : choisis ton rider', chooseP2: 'Joueur 2 : choisis ton rider',
-      onlineTitle: 'Duo en ligne', create: 'Créer une partie', join: 'Rejoindre', yourCode: 'Code de la partie', shareCode: 'Donne ce code à ton pote : il appuie sur « Rejoindre ».',
-      connecting: 'Connexion…', waitingMate: 'En attente de ton pote…', netError: 'Connexion impossible. Vérifie le code ou ta connexion.', mateLeft: 'Ton pote a quitté la partie.',
+      onlineTitle: 'Duo en ligne', retry: 'Réessayer', full: 'Une partie à deux est déjà en cours.',
+      connecting: 'Connexion…', waitingMate: 'En attente de ton pote… Il lance « Duo en ligne » de son côté.', netError: 'Connexion impossible. Vérifie ta connexion et réessaie.', mateLeft: 'Ton pote a quitté la partie.',
       waitHostSpot: 'L’hôte choisit le spot…', waitHostGo: 'En attente de l’hôte…', waitMateChar: 'Ton pote choisit son rider…',
       toBar: 'Direction le Secret Bar 🥊', barIn: 'Le Secret Bar ouvre dans {n} s…', duoWin: '{name} gagne la session !', duoDraw: 'Égalité parfaite !',
       hFight: 'Secret Bar', hFightTxt: 'Après la session, baston au bar : poing, pied, lancer de bière, et coup spécial quand ta jauge est pleine. Ton score de surf la remplit en partie.',
@@ -161,10 +161,10 @@ const I18N = {
       waterNote: 'Please drink responsibly. And after the session, nobody drives: get a lift home.',
       chooseMode: 'Pick a mode', modeSolo: 'Solo', modeSoloTxt: 'A 30-second session, then a brawl at the Secret Bar against the CPU.',
       modeLocal: 'Duo, same screen', modeLocalTxt: 'Two riders on the same wave, then settle it at the bar. One half of the screen each.',
-      modeOnline: 'Duo online', modeOnlineTxt: 'Each on your own phone, with a game code.',
+      modeOnline: 'Duo online', modeOnlineTxt: 'Each on your own phone: both start it, you connect automatically.',
       player1: 'Player 1', player2: 'Player 2', chooseP1: 'Player 1: pick your rider', chooseP2: 'Player 2: pick your rider',
-      onlineTitle: 'Duo online', create: 'Create a game', join: 'Join', yourCode: 'Game code', shareCode: 'Give this code to your mate: they tap “Join”.',
-      connecting: 'Connecting…', waitingMate: 'Waiting for your mate…', netError: 'Could not connect. Check the code or your connection.', mateLeft: 'Your mate left the game.',
+      onlineTitle: 'Duo online', retry: 'Try again', full: 'A two-player game is already running.',
+      connecting: 'Connecting…', waitingMate: 'Waiting for your mate… They start “Duo online” on their side.', netError: 'Could not connect. Check your connection and try again.', mateLeft: 'Your mate left the game.',
       waitHostSpot: 'The host is picking the spot…', waitHostGo: 'Waiting for the host…', waitMateChar: 'Your mate is picking a rider…',
       toBar: 'Off to the Secret Bar 🥊', barIn: 'The Secret Bar opens in {n}s…', duoWin: '{name} wins the session!', duoDraw: 'Dead heat!',
       hFight: 'Secret Bar', hFightTxt: 'After the session, brawl at the bar: punch, kick, throw a beer, and a special move when your meter is full. Your surf score fills part of it.',
@@ -2580,13 +2580,13 @@ $('#btn-start').addEventListener('click', () => showScreen('mode'));
 for (const b of $$('.mode-btn')) {
   b.addEventListener('click', () => {
     setMode(b.dataset.mode);
-    if (b.dataset.mode === 'online') { $('#online-status').textContent = ''; $('#online-code').hidden = true; showScreen('online'); }
+    if (b.dataset.mode === 'online') startOnline();
     else openChars(1);
   });
 }
 $('#btn-char-back').addEventListener('click', () => {
   if (S.pickFor === 2) { openChars(1); return; }
-  if (S.gameMode === 'online') { Net.close(); showScreen('online'); return; }
+  if (S.gameMode === 'online') { Net.close(); showScreen('mode'); return; }
   showScreen('mode');
 });
 $('#btn-char-ok').addEventListener('click', charOk);
@@ -2606,30 +2606,25 @@ $('#btn-fight').addEventListener('click', goFight);
 
 /* ---------------- Duo en ligne ---------------- */
 const onlineStatus = (txt) => { $('#online-status').textContent = txt; };
-$('#btn-host').addEventListener('click', async () => {
+async function startOnline() {
+  showScreen('online');
+  $('#btn-online-retry').hidden = true;
   onlineStatus(t('ui.connecting'));
-  try { await Net.host(); } catch (e) { onlineStatus(t('ui.netError')); }
-});
-$('#btn-join').addEventListener('click', async () => {
-  const code = $('#join-code').value.trim().toUpperCase();
-  if (code.length !== 4) { $('#join-code').focus(); return; }
-  onlineStatus(t('ui.connecting'));
-  try { await Net.join(code); } catch (e) { onlineStatus(t('ui.netError')); }
-});
-$('#join-code').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#btn-join').click(); });
+  try { await Net.connect(); } catch (e) { onlineStatus(t('ui.netError')); $('#btn-online-retry').hidden = false; }
+}
+$('#btn-online-retry').addEventListener('click', startOnline);
 $('#btn-online-back').addEventListener('click', () => { Net.close(); showScreen('mode'); });
 $('#btn-wait-quit').addEventListener('click', () => { Net.close(); quitToMenu('mode'); });
 Net.onStatus = (st, d) => {
   if (st === 'waiting') {
-    $('#online-code').hidden = false;
-    $('#online-code-val').textContent = d;
     onlineStatus(t('ui.waitingMate'));
   } else if (st === 'connected') {
     setP2(null);
     openChars(1);
-  } else if (st === 'error') {
+  } else if (st === 'error' || st === 'full') {
     if (S.gameMode === 'online' && currentScreen !== 'online') quitToMenu('online');
-    onlineStatus(t('ui.netError'));
+    onlineStatus(t(st === 'full' ? 'ui.full' : 'ui.netError'));
+    $('#btn-online-retry').hidden = false;
   } else if (st === 'closed') {
     if (S.gameMode === 'online' && !['online', 'mode', 'title'].includes(currentScreen)) {
       quitToMenu('wait');
