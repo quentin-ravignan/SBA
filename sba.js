@@ -52,7 +52,7 @@ const I18N = {
       title1: 'Surf', title2: 'Beer',
       subtitle: 'Le SBA contre les Michel : surfe les vagues de Dakar ou de l’Atlantique, plaque des figures, ramène un max de bières fraîches en 30 secondes, puis on règle ça au Secret Bar.',
       play: 'À l’eau !', titleHint: 'Mobile : glisse pour diriger · Ordi : flèches + Espace',
-      teamSba: 'SBA', teamMichel: 'Michel', shopTitle: 'Choisis ta planche', shopTitleP: '{name} : choisis ta planche', shopHello: 'Salut ! Bienvenue chez Jam’in. Toutes ces planches, je les ai shapées moi-même : prends celle qui te va.', shopOk: 'Je prends celle-là', shopDims: 'Cotes', shopProg: 'Programme', shopShape: 'Shape', shopSurfer: 'Surfer', step1: 'Étape 1 / 2', step2: 'Étape 2 / 2', chooseSurfer: 'Choisis ton rider', chooseSpot: 'Choisis ton spot',
+      teamSba: 'SBA', teamMichel: 'Michel', shopTitle: 'Choisis ta planche', shopTitleP: '{name} : choisis ta planche', shopHello: 'Salut ! Bienvenue chez Jam’in. Toutes ces planches, je les ai shapées moi-même : prends celle qui te va.', shopOk: 'Je prends celle-là', shopSee: 'Voir la planche chez Jam’in', shopBuy: 'Commander la vraie', shopPrices: 'Tarifs', shopDims: 'Cotes', shopProg: 'Programme', shopShape: 'Shape', shopSurfer: 'Surfer', step1: 'Étape 1 / 2', step2: 'Étape 2 / 2', chooseSurfer: 'Choisis ton rider', chooseSpot: 'Choisis ton spot',
       back: 'Retour', choose: 'Choisir', surfHere: 'On y va', surfers: 'Riders', spots: 'Spots',
       howTitle: 'Comment jouer',
       hSteer: 'Diriger', hSteerTouch: 'Glisse ton doigt à gauche / à droite.', hSteerKbd: 'Flèches ← → ou A / D.', hSteerTxt: 'À gauche, tu montes vers la lèvre de la vague.',
@@ -162,7 +162,7 @@ const I18N = {
       title1: 'Surf', title2: 'Beer',
       subtitle: 'SBA against the Michels: surf the waves of Dakar or the Atlantic, land tricks, bring back as many cold beers as you can in 30 seconds, then settle it at the Secret Bar.',
       play: 'Paddle out!', titleHint: 'Mobile: swipe to steer · Computer: arrow keys + Space',
-      shopTitle: 'Pick your board', shopTitleP: '{name}: pick your board', shopHello: 'Hey! Welcome to Jam’in. I shaped every one of these boards myself: take the one that suits you.', shopOk: 'I’ll take this one', shopDims: 'Dimensions', shopProg: 'Programme', shopShape: 'Shape', shopSurfer: 'Surfer', step1: 'Step 1 / 2', step2: 'Step 2 / 2', chooseSurfer: 'Pick your rider', chooseSpot: 'Pick your spot',
+      shopTitle: 'Pick your board', shopTitleP: '{name}: pick your board', shopHello: 'Hey! Welcome to Jam’in. I shaped every one of these boards myself: take the one that suits you.', shopOk: 'I’ll take this one', shopSee: 'See it at Jam’in', shopBuy: 'Order the real one', shopPrices: 'Prices', shopDims: 'Dimensions', shopProg: 'Programme', shopShape: 'Shape', shopSurfer: 'Surfer', step1: 'Step 1 / 2', step2: 'Step 2 / 2', chooseSurfer: 'Pick your rider', chooseSpot: 'Pick your spot',
       back: 'Back', choose: 'Choose', surfHere: "Let's go", surfers: 'Riders', spots: 'Spots',
       howTitle: 'How to play',
       hSteer: 'Steer', hSteerTouch: 'Slide your finger left / right.', hSteerKbd: 'Arrow keys ← → or A / D.', hSteerTxt: 'Go left to climb towards the lip of the wave.',
@@ -293,11 +293,13 @@ const CHAR_LOOKS = {
   maman: { skin: 0xe6b796, hair: 'capBack', scarf: 0x9aa39a, hairColor: 0x3a2a1c, beard: 'stubble', beardOpacity: 0.45, shirt: 0xe6b796, shorts: 0x2d3a4a, board: 0x7fd0f0, stripe: 0xffffff, perk: 'magnet' },
 };
 /* Planches du surf shop Jam'in (photos de jamin-surfboards.com, avec l'accord de JéréMichel ; illustration dessinée si la photo manque) */
+const JAMIN_PREORDER = 'https://jamin-surfboards.com/pre-commande/';
+const JAMIN_PRICES = 'https://jamin-surfboards.com/tarifs/';
 const BOARDS = [
-  { id: 'bigguy', name: 'The Big Guy’s', dims: '6’6 × 20 ½” × 2 ½”', photo: 'img/boards/bigguy.jpg', look: { board: 0xf6f3ea, stripe: 0x1f6fd1 } },
-  { id: 'groms', name: 'Grom’s Model', dims: '5’8 × 18 ¾” × 2 5/16”', photo: 'img/boards/groms.jpg', look: { board: 0xf2d81e, stripe: 0x1f8f8a } },
-  { id: 'clown', name: 'The Black Clown', dims: '5’8 × 21” × 2 ½”', photo: 'img/boards/clown.jpg', look: { board: 0x151515, stripe: 0xf4f4f0 } },
-  { id: 'egg', name: 'Pillule Egg', dims: '6’2 × 20” × 2 ½”', photo: 'img/boards/egg.jpg', look: { board: 0xf1ead6, stripe: 0x2a9d93 } },
+  { id: 'bigguy', name: 'The Big Guy’s', dims: '6’6 × 20 ½” × 2 ½”', photo: 'img/boards/bigguy.jpg', url: 'https://jamin-surfboards.com/shapes/the-big-guys/', look: { board: 0xf6f3ea, stripe: 0x1f6fd1 } },
+  { id: 'groms', name: 'Grom’s Model', dims: '5’8 × 18 ¾” × 2 5/16”', photo: 'img/boards/groms.jpg', url: 'https://jamin-surfboards.com/shapes/groms-model/', look: { board: 0xf2d81e, stripe: 0x1f8f8a } },
+  { id: 'clown', name: 'The Black Clown', dims: '5’8 × 21” × 2 ½”', photo: 'img/boards/clown.jpg', url: 'https://jamin-surfboards.com/shapes/the-black-clown/', look: { board: 0x151515, stripe: 0xf4f4f0 } },
+  { id: 'egg', name: 'Pillule Egg', dims: '6’2 × 20” × 2 ½”', photo: 'img/boards/egg.jpg', url: 'https://jamin-surfboards.com/shapes/pillule-egg/', look: { board: 0xf1ead6, stripe: 0x2a9d93 } },
 ];
 const withBoard = (ch, boardId) => {
   const b = ch && BOARDS.find((x) => x.id === boardId);
@@ -2905,6 +2907,17 @@ function selectBoard(id) {
     const dd = document.createElement('dd'); dd.textContent = v;
     dl.append(dt, dd);
   }
+  // liens vers le vrai shop Jam'in (nouvel onglet)
+  const links = document.createElement('div');
+  links.className = 'shop-links';
+  for (const [href, k, main] of [[b.url, 'ui.shopSee', false], [JAMIN_PREORDER, 'ui.shopBuy', true], [JAMIN_PRICES, 'ui.shopPrices', false]]) {
+    const a = document.createElement('a');
+    a.href = href; a.target = '_blank'; a.rel = 'noopener';
+    a.className = 'btn ' + (main ? 'btn-primary' : 'btn-ghost');
+    a.textContent = t(k);
+    links.appendChild(a);
+  }
+  d.appendChild(links);
   if (S.shopFor !== 2) setSurfer(S.char);
 }
 function shopOk() {
