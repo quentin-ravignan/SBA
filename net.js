@@ -1,47 +1,29 @@
-/* SBA – connexion « duo en ligne » en pair à pair (WebRTC via PeerJS).
+/* SBA – connexion « duo en ligne » par relais Supabase Realtime.
    Il n'y a qu'un seul salon : le premier joueur qui lance « Duo en ligne »
-   l'ouvre (hôte), le second s'y connecte directement (invité). Pas de code.
-   Le serveur public de PeerJS sert seulement à mettre les deux téléphones en
-   relation ; ensuite les données passent d'un appareil à l'autre.
-   Aucune donnée personnelle n'est envoyée. */
+   devient l'hôte, le second l'invité. Les messages passent par le serveur
+   Realtime (WebSocket), ce qui marche partout, y compris en 4G, là où une
+   connexion directe entre téléphones est souvent bloquée.
+   Rien n'est écrit en base ; aucune donnée personnelle n'est envoyée. */
 
-const PEERJS_URL = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
-const ROOM = 'sba7k2q-surfbeer-salon';
-const GUEST_TIMEOUT = 8000;   // hôte fantôme (onglet fermé sans se déconnecter) : on reprend le salon
-const MAX_TRIES = 4;
-const PEER_OPTS = {
-  debug: 0,
-  config: {
-    iceServers: [
-      { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
-      { urls: ['turn:eu-0.turn.peerjs.com:3478', 'turn:us-0.turn.peerjs.com:3478'], username: 'peerjs', credential: 'peerjsp' },
-    ],
-  },
-};
+const SUPA_URL = 'https://zvrzpfyxtqygzsihjccu.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2cnpwZnl4dHF5Z3pzaWhqY2N1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3NjYwNzMsImV4cCI6MjEwODM0MjA3M30.XImY1lOpd-CIZ4ZTx_7ADpUlrwqE1xYH8-23NPkDZXo';
+const LIB_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
+const ROOM = 'sba-duo-salon';
+const JOIN_TIMEOUT = 12000;
 
-let peer = null;
-let conn = null;
+let client = null;
+let chan = null;
+let gen = 0;
 let timer = 0;
-let gen = 0;     // invalide les rappels d'une tentative abandonnée
 
-function loadLib() {
-  if (window.Peer) return Promise.resolve();
-  return new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = PEERJS_URL;
-    s.async = true;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error('peerjs'));
-    document.head.appendChild(s);
+async function getClient() {
+  if (client) return client;
+  const { createClient } = await import(LIB_URL);
+  client = createClient(SUPA_URL, SUPA_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    realtime: { params: { eventsPerSecond: 60 } },
   });
-}
-
-function dropPeer() {
-  clearTimeout(timer);
-  const c = conn, p = peer;
-  conn = null; peer = null;
-  try { if (c) c.close(); } catch (e) { /* ignore */ }
-  try { if (p) p.destroy(); } catch (e) { /* ignore */ }
+  return client;
 }
 
 export const Net = {
@@ -49,88 +31,76 @@ export const Net = {
   connected: false,
   onMessage: null,   // (msg) => void
   onStatus: null,    // (state, detail) => void  state: 'waiting' | 'connected' | 'closed' | 'full' | 'error'
+  me: null,
+  peer: null,
 
   _status(s, d) { if (this.onStatus) this.onStatus(s, d); },
-  _bind(c, g) {
-    conn = c;
-    let opened = false;
-    c.on('open', () => {
-      if (g !== gen) return;
-      opened = true; clearTimeout(timer);
-      this.connected = true; this._status('connected');
-    });
-    c.on('data', (d) => { if (g === gen && this.onMessage) this.onMessage(d); });
-    c.on('close', () => {
-      if (g !== gen || conn !== c) return;
-      this.connected = false; conn = null;
-      if (opened) this._status('closed');
-      else if (this.role === 'guest') this._status('full');   // l'hôte a refusé : partie déjà à deux
-    });
-    c.on('error', () => { /* géré par close / le délai */ });
-  },
 
-  /* Ouvre le salon, ou le rejoint s'il est déjà ouvert. */
+  /* Entre dans le salon : hôte si on est seul, invité s'il y a déjà quelqu'un. */
   async connect() {
     this.close();
-    await loadLib();
     const g = ++gen;
-    let tries = 0;
+    let sb;
+    try { sb = await getClient(); } catch (e) { if (g === gen) this._status('error', 'lib'); return; }
+    if (g !== gen) return;
+    this.me = Math.random().toString(36).slice(2, 10);
+    const joinedAt = Date.now();
+    const c = sb.channel(ROOM, { config: { broadcast: { self: false, ack: false }, presence: { key: this.me } } });
+    chan = c;
 
-    const fail = (why) => { if (g === gen) { dropPeer(); this._status('error', why); } };
-    const retry = (why) => {
+    c.on('broadcast', { event: 'm' }, ({ payload }) => {
+      if (g !== gen || !payload || payload.to !== this.me || payload.from !== this.peer) return;
+      if (this.connected && this.onMessage) this.onMessage(payload.d);
+    });
+
+    c.on('presence', { event: 'sync' }, () => {
       if (g !== gen) return;
-      dropPeer();
-      if (++tries >= MAX_TRIES) { this._status('error', why); return; }
-      setTimeout(() => { if (g === gen) asHost(); }, 300 + Math.random() * 700);
-    };
+      // ordre d'arrivée : les deux premiers jouent, les suivants voient « partie complète »
+      const list = [];
+      const st = c.presenceState();
+      for (const k in st) { const m = st[k][0]; if (m) list.push({ id: k, t: m.t || 0 }); }
+      list.sort((a, b) => a.t - b.t || (a.id < b.id ? -1 : 1));
+      const idx = list.findIndex((x) => x.id === this.me);
+      if (idx < 0) return; // notre présence n'est pas encore enregistrée
+      if (idx > 1) { this.close(); this._status('full'); return; }
+      const other = list[1 - idx];
+      if (this.connected) {
+        if (!other || other.id !== this.peer) { this.connected = false; this.peer = null; this._status('closed'); }
+        return;
+      }
+      this.role = idx === 0 ? 'host' : 'guest';
+      if (!other) { this._status('waiting'); return; }
+      this.peer = other.id;
+      this.connected = true;
+      clearTimeout(timer);
+      this._status('connected');
+    });
 
-    const asHost = () => {
-      this.role = null;
-      const p = new window.Peer(ROOM, PEER_OPTS);
-      peer = p;
-      p.on('open', () => { if (g === gen) { this.role = 'host'; this._status('waiting'); } });
-      p.on('connection', (c) => {
-        if (g !== gen) return;
-        if (conn && conn.open) { c.on('open', () => c.close()); return; } // déjà à deux
-        this._bind(c, g);
-      });
-      p.on('error', (e) => {
-        if (g !== gen) return;
-        const type = e && e.type;
-        if (type === 'unavailable-id') { dropPeer(); asGuest(); }   // salon déjà ouvert : on le rejoint
-        else if (type === 'peer-unavailable') { /* sans objet pour l'hôte */ }
-        else if (this.role === 'host' && type === 'network') { /* reconnexion ci-dessous */ }
-        else fail(type);
-      });
-      p.on('disconnected', () => { if (g === gen && peer === p && !p.destroyed) p.reconnect(); });
-    };
+    timer = setTimeout(() => { if (g === gen && !this.connected && !this.role) { this.close(); this._status('error', 'timeout'); } }, JOIN_TIMEOUT);
 
-    const asGuest = () => {
-      this.role = 'guest';
-      const p = new window.Peer(PEER_OPTS);
-      peer = p;
-      p.on('open', () => {
-        if (g !== gen) return;
-        this._bind(p.connect(ROOM, { reliable: true, serialization: 'json' }), g);
-        timer = setTimeout(() => { if (g === gen && !this.connected) retry('timeout'); }, GUEST_TIMEOUT);
-      });
-      p.on('error', (e) => {
-        if (g !== gen) return;
-        const type = e && e.type;
-        if (type === 'peer-unavailable') retry(type);   // l'hôte vient de partir : on prend sa place
-        else fail(type);
-      });
-    };
-
-    asHost();
+    c.subscribe(async (status) => {
+      if (g !== gen) return;
+      if (status === 'SUBSCRIBED') {
+        try { await c.track({ t: joinedAt }); } catch (e) { this._status('error', 'track'); }
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        if (this.connected) { this.connected = false; this._status('closed'); }
+        else { this.close(); this._status('error', status); }
+      }
+    });
   },
 
-  send(msg) { if (conn && conn.open) { try { conn.send(msg); } catch (e) { /* ignore */ } } },
+  send(msg) {
+    if (!chan || !this.connected) return;
+    try { chan.send({ type: 'broadcast', event: 'm', payload: { from: this.me, to: this.peer, d: msg } }); } catch (e) { /* ignore */ }
+  },
 
   close() {
     gen++;
+    clearTimeout(timer);
     this.connected = false;
     this.role = null;
-    dropPeer();
+    this.peer = null;
+    const c = chan; chan = null;
+    if (c) { try { c.untrack(); } catch (e) { /* ignore */ } try { if (client) client.removeChannel(c); } catch (e) { /* ignore */ } }
   },
 };
