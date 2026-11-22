@@ -6,7 +6,7 @@
    ========================================================================== */
 
 export function createFight(api) {
-  const { THREE, renderer, buildSurfer, buildTrash, buildPalm, Sound, getLang, isTouch, reducedMotion } = api;
+  const { THREE, renderer, buildSurfer, buildTrash, buildPalm, Sound, Voice, getLang, isTouch, reducedMotion } = api;
   const $ = (s, r) => (r || document).querySelector(s);
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -27,7 +27,10 @@ export function createFight(api) {
       sp: {
         shugo: 'Invocation démoniaque !', quentin: 'Pause pipi stratégique !', victor: 'Vroussos Services : le 4x4 arrive !',
         max: 'Charge du rhinocéros !', luca: 'Pizza volante !',
+        timichel: 'Pluie de pralines !', rom1michel: 'La roulée qui tue !', grandmichel: 'Budō kaidō !',
+        jeremichel: 'Planche Jam’in volante !', maman: 'Pac Pack !',
       },
+      sweet: 'C’est pour toi ♥', puff: 'Ffffff…', kiai: 'KIAAAAÏ !', catch: 'Attrape !', pacpack: 'PAC PACK !', cough: 'KOF KOF !',
       gross: 'BEURK !', squash: 'ÉCRASÉ !', drink: 'Glou glou…', call: 'Allô, Vroussos ?', roar: 'RHAAAAA !', pizza: 'Mamma mia !', summon: 'Lok’tar !',
     },
     en: {
@@ -42,7 +45,10 @@ export function createFight(api) {
       sp: {
         shugo: 'Demonic summoning!', quentin: 'Tactical pee break!', victor: 'Vroussos Services: here comes the 4x4!',
         max: 'Rhino charge!', luca: 'Flying pizza!',
+        timichel: 'Praline shower!', rom1michel: 'Killer roll-up!', grandmichel: 'Budō kaidō!',
+        jeremichel: 'Flying Jam’in board!', maman: 'Pac Pack!',
       },
+      sweet: 'This is for you ♥', puff: 'Ffffff…', kiai: 'KIAAAAI!', catch: 'Catch!', pacpack: 'PAC PACK!', cough: 'COUGH COUGH!',
       gross: 'EWWW!', squash: 'SQUASHED!', drink: 'Glug glug…', call: 'Hello, Vroussos?', roar: 'RHAAAAA!', pizza: 'Mamma mia!', summon: 'Lok’tar!',
     },
   };
@@ -234,6 +240,75 @@ export function createFight(api) {
     return g;
   }
 
+  // --- accessoires des Michel ---
+  function buildPraline() {
+    const g = new THREE.Group();
+    const pink = M(0xe8508f);
+    sph(0.075, pink, 0, 0, 0, g);
+    for (let i = 0; i < 9; i++) { const a = rand(0, 6.28), b = rand(0, 3.14); sph(0.028, pink, Math.sin(b) * Math.cos(a) * 0.07, Math.cos(b) * 0.07, Math.sin(b) * Math.sin(a) * 0.07, g); }
+    return g;
+  }
+  function buildJaminBoard() {
+    // planche de surf avec le logo Jam'in (planche couchée le long de x)
+    const g = new THREE.Group();
+    const b = new THREE.Mesh(SPH, M(0xf3ead8)); b.scale.set(0.95, 0.045, 0.26); g.add(b);
+    box(1.86, 0.012, 0.012, M(0x8a6a3a), 0, 0.04, 0, g);
+    const c = document.createElement('canvas'); c.width = 256; c.height = 96;
+    const x = c.getContext('2d');
+    x.fillStyle = '#e8a33d'; x.fillRect(0, 0, 256, 96);
+    x.strokeStyle = '#111'; x.lineWidth = 4; x.beginPath(); x.arc(46, 48, 26, 0, 6.28); x.stroke();
+    for (let i = 0; i < 16; i++) { const a = i / 16 * 6.28; x.beginPath(); x.moveTo(46 + Math.cos(a) * 8, 48 + Math.sin(a) * 8); x.lineTo(46 + Math.cos(a) * 24, 48 + Math.sin(a) * 24); x.stroke(); }
+    x.fillStyle = '#111'; x.font = '800 44px "Barlow Condensed", Arial, sans-serif'; x.textBaseline = 'middle'; x.fillText('jam’in', 84, 46);
+    const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+    for (const s of [1, -1]) {
+      const l = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.23), new THREE.MeshBasicMaterial({ map: tex }));
+      l.rotation.x = -Math.PI / 2 * s; l.position.y = 0.047 * s; if (s < 0) l.rotation.z = Math.PI; g.add(l);
+    }
+    const fin = new THREE.Mesh(CONE, M(0x111418)); fin.scale.set(0.05, 0.14, 0.02); fin.position.set(0.78, -0.08, 0); fin.rotation.z = Math.PI; g.add(fin);
+    return g;
+  }
+  function buildRoll() {
+    const g = new THREE.Group();
+    const r = new THREE.Mesh(CYL, M(0xf2efe6)); r.scale.set(0.014, 0.12, 0.014); r.rotation.x = Math.PI / 2; g.add(r);
+    const ember = new THREE.Mesh(SPH, new THREE.MeshBasicMaterial({ color: 0xff5a1f })); ember.scale.setScalar(0.017); ember.position.z = -0.065; g.add(ember);
+    g.userData.ember = ember;
+    return g;
+  }
+  function buildFingers(skin) {
+    const g = new THREE.Group();
+    const m = M(skin);
+    for (const z of [-0.018, 0.018]) { const f = new THREE.Mesh(CYL, m); f.scale.set(0.014, 0.11, 0.014); f.position.set(0, -0.06, z); g.add(f); }
+    sph(0.04, m, 0, 0, 0, g);
+    return g;
+  }
+  // particules « sprites » (fumée, cœurs)
+  function spriteTex(draw) { const c = document.createElement('canvas'); c.width = c.height = 64; draw(c.getContext('2d')); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; }
+  function makeSprites(N, tex, size, color, opacity) {
+    const geo = new THREE.BufferGeometry(); const pos = new Float32Array(N * 3);
+    for (let i = 0; i < N; i++) pos[i * 3 + 1] = -50;
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const pts = new THREE.Points(geo, new THREE.PointsMaterial({ map: tex, size, color, transparent: true, opacity, depthWrite: false }));
+    pts.frustumCulled = false; scene.add(pts);
+    const vel = new Float32Array(N * 3), life = new Float32Array(N); let idx = 0;
+    return {
+      emit(x, y, z, vx, vy, vz, l) { if (reducedMotion && Math.random() < 0.6) return; const i = idx; idx = (idx + 1) % N; pos[i * 3] = x; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z; vel[i * 3] = vx; vel[i * 3 + 1] = vy; vel[i * 3 + 2] = vz; life[i] = l; },
+      update(dt, drag, lift) {
+        const k = Math.pow(drag, dt);
+        for (let i = 0; i < N; i++) {
+          if (life[i] <= 0) continue;
+          life[i] -= dt;
+          if (life[i] <= 0) { pos[i * 3 + 1] = -50; continue; }
+          vel[i * 3] *= k; vel[i * 3 + 2] *= k; vel[i * 3 + 1] = vel[i * 3 + 1] * k + lift * dt;
+          pos[i * 3] += vel[i * 3] * dt; pos[i * 3 + 1] += vel[i * 3 + 1] * dt; pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
+        }
+        geo.attributes.position.needsUpdate = true;
+      },
+    };
+  }
+  const smoke = makeSprites(160, spriteTex((g) => { const gr = g.createRadialGradient(32, 32, 2, 32, 32, 30); gr.addColorStop(0, 'rgba(255,255,255,0.9)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); }), 1.1, 0xd9d6cc, 0.55);
+  const hearts = makeSprites(80, spriteTex((g) => { g.fillStyle = '#fff'; g.beginPath(); g.moveTo(32, 56); g.bezierCurveTo(4, 36, 6, 8, 24, 10); g.bezierCurveTo(30, 11, 32, 18, 32, 20); g.bezierCurveTo(32, 18, 34, 11, 40, 10); g.bezierCurveTo(58, 8, 60, 36, 32, 56); g.fill(); }), 0.4, 0xff6fae, 0.95);
+  function burstHearts(x, y, n) { for (let i = 0; i < n; i++) hearts.emit(x + rand(-0.3, 0.3), y + rand(-0.3, 0.3), 0.4, rand(-1.4, 1.4), rand(1.2, 3), rand(-0.3, 0.3), rand(0.9, 1.6)); }
+
   // effets d'un combattant (un jeu par joueur)
   function makeFx() {
     const fx = {
@@ -285,9 +360,14 @@ export function createFight(api) {
   }
 
   // projectiles (rendu par réserve d'objets)
-  const pool = { beer: [], pizza: [] };
+  const pool = { beer: [], pizza: [], praline: [], board: [] };
   function poolGet(k, i) {
-    while (pool[k].length <= i) { const o = k === 'beer' ? buildBottle() : buildPizza(); if (k === 'beer') o.scale.setScalar(0.75); scene.add(o); pool[k].push(o); }
+    while (pool[k].length <= i) {
+      const o = k === 'beer' ? buildBottle() : k === 'praline' ? buildPraline() : k === 'board' ? buildJaminBoard() : buildPizza();
+      if (k === 'beer') o.scale.setScalar(0.75);
+      if (k === 'praline') o.scale.setScalar(1.6);
+      scene.add(o); pool[k].push(o);
+    }
     return pool[k][i];
   }
 
@@ -372,7 +452,8 @@ export function createFight(api) {
     kick: { dur: 0.5, hitAt: 0.19, hitEnd: 0.32, range: 1.35, dmg: 10, kb: 1.2, stun: 0.42 },
     beer: { dur: 0.5, throwAt: 0.26, cd: 1.1 },
   };
-  const SPECIAL_DUR = { shugo: 3.0, quentin: 3.0, victor: 3.0, max: 2.1, luca: 1.9 };
+  const SPECIAL_DUR = { shugo: 3.0, quentin: 3.0, victor: 3.0, max: 2.1, luca: 1.9, timichel: 2.0, rom1michel: 3.0, grandmichel: 2.0, jeremichel: 1.9, maman: 2.4 };
+  const PROJ_KINDS = ['beer', 'pizza', 'praline', 'board'];
 
   const F = {
     on: false, mode: 'solo', role: 'local', me: 0, net: null, onExit: null,
@@ -394,8 +475,12 @@ export function createFight(api) {
       const h2 = new THREE.Mesh(CONE, M(0xddd5c4)); h2.scale.set(0.035, 0.12, 0.035); h2.rotation.z = Math.PI / 2 + 0.5; h2.position.set(-0.15, 0.1, 0); horn.add(h2);
       horn.visible = false; u.headG.add(horn);
     }
+    const praline = buildPraline(); praline.position.set(0.12, -0.53, -0.27); praline.visible = false; u.arms[0].add(praline);
+    const roll = buildRoll(); roll.position.set(0.12, -0.52, -0.3); roll.visible = false; u.arms[0].add(roll);
+    const fingers = buildFingers(ch.skin || 0xe6b796); fingers.position.set(0.13, -0.55, -0.24); fingers.rotation.z = 0.3; fingers.visible = false; u.arms[0].add(fingers);
+    const jboard = buildJaminBoard(); jboard.visible = false; model.add(jboard);
     return {
-      ch, name, side, model, u, bottle, pizza, phone, horn, fx: makeFx(),
+      ch, name, side, model, u, bottle, pizza, phone, horn, praline, roll, fingers, jboard, fx: makeFx(),
       x: side ? 2.3 : -2.3, y: 0, vy: 0, vx: 0, kx: 0, dash: 0, face: side ? -1 : 1,
       hp: 100, lag: 100, meter: 0, act: null, actT: 0, hitDone: false, stun: 0, flat: 0, cdThrow: 0, block: false,
       inp: { l: 0, r: 0, up: 0 }, buf: null, ev: {}, wins: 0, spx0: 0, tick: 0, aiT: 0, walkT: 0, prevHp: 100,
@@ -504,6 +589,8 @@ export function createFight(api) {
   function spawnProj(f, k) {
     const hand = f.x + f.face * 0.45;
     if (k === 'beer') F.projs.push({ k, x: hand, y: 1.55, vx: f.face * 9.5, vy: 2.2, r: 0, owner: f.side, dmg: 8 });
+    else if (k === 'praline') F.projs.push({ k, x: hand, y: 1.6, vx: f.face * 9, vy: 1.6, r: 0, owner: f.side, dmg: 8 });
+    else if (k === 'board') F.projs.push({ k, x: hand, y: 1.5, vx: f.face * 10, vy: 0, r: 0, owner: f.side, dmg: 24 });
     else F.projs.push({ k, x: hand, y: 1.45, vx: f.face * 8.5, vy: 0, r: 0, owner: f.side, dmg: 26 });
     evt({ k: 'throw', s: f.side });
   }
@@ -533,6 +620,35 @@ export function createFight(api) {
       }
     } else if (id === 'luca') {
       if (t >= 1.2 && once(f, 'p')) spawnProj(f, 'pizza');
+    } else if (id === 'timichel') {
+      // trois pralines d'affilée
+      for (let i = 0; i < 3; i++) if (t >= 0.55 + 0.35 * i && once(f, 'pr' + i)) spawnProj(f, 'praline');
+    } else if (id === 'rom1michel') {
+      // il souffle sa fumée : l'adversaire tousse s'il est dans le nuage
+      if (t >= 1.05 && t < 2.75) {
+        f.tick += dt;
+        while (f.tick >= 0.25) { f.tick -= 0.25; if (Math.abs(o.x - f.x) < 4.4) hit(o, f, 2.6, { kb: 0.1, stun: 0.5, special: true, k: 'smoke', quiet: true }); }
+      }
+    } else if (id === 'grandmichel') {
+      // concentration (cri), puis frappe massive en fonçant
+      if (t >= 0.7 && !f.ev.h) {
+        f.dash = f.face * 13;
+        if ((o.x - f.x) * f.face < 1.0 && o.y < 1.3) { f.ev.h = 1; f.dash = 0; hit(o, f, 28, { kb: 2.6, stun: 1.2, special: true, k: 'budo', vy: 5 }); }
+        else if (t > 1.6 || Math.abs(f.x) >= ARENA - 0.05) { f.ev.h = 1; f.dash = 0; }
+      }
+    } else if (id === 'jeremichel') {
+      if (t >= 1.0 && once(f, 'b')) spawnProj(f, 'board');
+    } else if (id === 'maman') {
+      // il s'approche, puis deux coups de doigts : « PAC ! » « PACK ! »
+      if (t >= 0.35 && !f.ev.c) {
+        f.dash = f.face * 10;
+        if ((o.x - f.x) * f.face < 0.95 && o.y < 1.3) { f.ev.c = t; f.dash = 0; }
+        else if (t > 1.5 || Math.abs(f.x) >= ARENA - 0.05) { f.ev.c = -1; f.dash = 0; }
+      }
+      if (f.ev.c > 0) {
+        if (t >= f.ev.c + 0.2 && once(f, 'k1')) hit(o, f, 12, { kb: 0.4, stun: 0.8, special: true, k: 'pac' });
+        if (t >= f.ev.c + 0.65 && once(f, 'k2')) hit(o, f, 13, { kb: 1.2, stun: 0.9, special: true, k: 'pack', vy: 3 });
+      }
     }
     if (t >= SPECIAL_DUR[id]) endAct(f);
   }
@@ -584,11 +700,18 @@ export function createFight(api) {
     for (let i = F.projs.length - 1; i >= 0; i--) {
       const p = F.projs[i];
       if (p.k === 'beer') p.vy -= 9 * dt;
-      p.x += p.vx * dt; p.y += p.vy * dt; p.r += dt * (p.k === 'beer' ? 14 : 22);
+      else if (p.k === 'praline') p.vy -= 4 * dt;
+      p.x += p.vx * dt; p.y += p.vy * dt; p.r += dt * (p.k === 'beer' ? 14 : p.k === 'board' ? 12 : 22);
       const o = F.fs[1 - p.owner], f = F.fs[p.owner];
-      const rad = p.k === 'pizza' ? 0.65 : 0.42;
+      const rad = p.k === 'pizza' ? 0.65 : p.k === 'board' ? 0.8 : 0.42;
       if (o.hp > 0 && Math.abs(p.x - o.x) < rad && p.y > o.y + 0.1 && p.y < o.y + 1.95 && o.act !== 'special') {
-        hit(o, f, p.dmg, p.k === 'pizza' ? { kb: 1.8, stun: 1.0, special: true, k: 'pizza', vy: 4 } : { kb: 0.9, stun: 0.45, k: 'smash' });
+        const HIT = {
+          pizza: { kb: 1.8, stun: 1.0, special: true, k: 'pizza', vy: 4 },
+          praline: { kb: 0.4, stun: 0.7, special: true, k: 'heart' },
+          board: { kb: 2.1, stun: 1.1, special: true, k: 'board', vy: 4.5 },
+          beer: { kb: 0.9, stun: 0.45, k: 'smash' },
+        };
+        hit(o, f, p.dmg, HIT[p.k]);
         F.projs.splice(i, 1); continue;
       }
       if (p.y < 0.1 || Math.abs(p.x) > 14) {
@@ -660,7 +783,7 @@ export function createFight(api) {
     return {
       t: 'fs', ph: F.phase, pt: r2(F.phaseT), rd: F.round, tm: r2(F.timer), w: F.winner,
       f: F.fs.map((f) => [r2(f.x), r2(f.y), f.face, r2(f.hp), r2(f.meter), f.act || '', r2(f.actT), r2(f.flat), f.block ? 1 : 0, f.wins, r2(f.spx0), r2(f.vx + f.dash + f.kx)]),
-      p: F.projs.map((p) => [p.k === 'beer' ? 0 : 1, r2(p.x), r2(p.y), r2(p.r)]),
+      p: F.projs.map((p) => [Math.max(0, PROJ_KINDS.indexOf(p.k)), r2(p.x), r2(p.y), r2(p.r)]),
       e: F.outEv.splice(0),
     };
   }
@@ -676,7 +799,7 @@ export function createFight(api) {
       if (act !== f.act || Math.abs(a[6] - f.actT) > 0.25) f.actT = a[6];
       f.act = act; f.flat = a[7]; f.block = !!a[8]; f.wins = a[9]; f.spx0 = a[10]; f.vx = a[11];
     });
-    F.projs = s.p.map((p) => ({ k: p[0] ? 'pizza' : 'beer', x: p[1], y: p[2], r: p[3] }));
+    F.projs = s.p.map((p) => ({ k: PROJ_KINDS[p[0]] || 'beer', x: p[1], y: p[2], r: p[3] }));
     for (const e of s.e) F.events.push(e);
     if (s.ph === 'intro' && (prevPhase !== 'intro' || prevRound !== s.rd)) banner(tx('round', { n: s.rd }), 'is-round');
     if (s.ph === 'over' && prevPhase !== 'over') showOver();
@@ -732,6 +855,11 @@ export function createFight(api) {
     else if (id === 'quentin') { for (let i = 0; i < 4; i++) setTimeout(() => S.tone(320 - i * 20, 0.12, 'sine', 0.2, -120), i * 220); setTimeout(() => S.noise(1.6, 2600, 0.14), 1100); }
     else if (id === 'victor') { S.tone(880, 0.1, 'sine', 0.12); setTimeout(() => S.tone(660, 0.1, 'sine', 0.12), 160); setTimeout(() => { S.tone(392, 0.25, 'square', 0.16); S.noise(1.4, 160, 0.35); }, 700); setTimeout(() => S.tone(330, 0.4, 'square', 0.16), 980); }
     else if (id === 'max') { S.tone(240, 0.9, 'sawtooth', 0.26, -170); S.noise(0.9, 500, 0.35); }
+    else if (id === 'timichel') { for (let i = 0; i < 3; i++) setTimeout(() => { S.noise(0.15, 1800, 0.15); S.tone(988 + i * 120, 0.12, 'sine', 0.12); }, 550 + i * 350); }
+    else if (id === 'rom1michel') { S.tone(1200, 0.05, 'square', 0.06); S.noise(0.9, 900, 0.12); setTimeout(() => S.noise(1.7, 350, 0.3), 1050); }
+    else if (id === 'grandmichel') { S.tone(110, 0.7, 'sawtooth', 0.2, 180); S.noise(0.7, 600, 0.25); }
+    else if (id === 'jeremichel') { S.tone(392, 0.2, 'triangle', 0.14); setTimeout(() => S.noise(0.6, 900, 0.3), 1000); }
+    else if (id === 'maman') { for (let i = 0; i < 6; i++) setTimeout(() => S.tone(1400 + (i % 2) * 300, 0.05, 'square', 0.07), i * 60); }
     else if (id === 'luca') { S.tone(523, 0.15, 'triangle', 0.14); setTimeout(() => S.tone(659, 0.15, 'triangle', 0.14), 150); setTimeout(() => S.tone(784, 0.25, 'triangle', 0.14), 300); setTimeout(() => S.noise(0.5, 1200, 0.3), 1200); }
   }
   const HITWORDS = ['PAF !', 'BIM !', 'POW !', 'BAM !', 'BOUM !'];
@@ -748,14 +876,23 @@ export function createFight(api) {
         case 'truck': emit(e.x, 0.3, 0.3, 40, [0xd8c49a, 0xffffff], 5); sfx('hit'); popText(tx('squash'), e.x, e.y + 0.6, 'is-big'); F.shake = 0.35; break;
         case 'rhino': emit(e.x, e.y, 0.3, 30, [0xffffff, 0xffd25a], 5); sfx('hit'); popText('BOUM !', e.x, e.y + 0.4, 'is-big'); F.shake = 0.3; break;
         case 'pizza': emit(e.x, e.y, 0.3, 30, [0xc9361f, 0xf4d36b, 0xe0a453], 4); sfx('hit'); popText('SPLAT !', e.x, e.y + 0.4, 'is-big'); F.shake = 0.22; break;
+        case 'heart': emit(e.x, e.y, 0.3, 16, [0xff6fae, 0xffc2dc, 0xffffff], 2.5); burstHearts(e.x, e.y + 0.2, 10); sfx('hit'); S.tone(880, 0.15, 'sine', 0.1, 200); popText('♥ ♥ ♥', e.x, e.y + 0.4, 'is-heart'); break;
+        case 'smoke': popText(tx('cough'), e.x, e.y + 0.5, 'is-smoke'); S.noise(0.25, 700, 0.25); break;
+        case 'budo': emit(e.x, e.y, 0.3, 45, [0xffd25a, 0xffffff, 0xff8a2a], 6); sfx('hit'); S.tone(90, 0.5, 'sawtooth', 0.25, -40); popText('BUDŌ KAIDŌ !', e.x, e.y + 0.5, 'is-big'); F.shake = 0.4; break;
+        case 'board': emit(e.x, e.y, 0.3, 30, [0xf3ead8, 0xe8a33d, 0xffffff], 4.5); sfx('hit'); popText('JAM’IN !', e.x, e.y + 0.4, 'is-big'); F.shake = 0.25; break;
+        case 'pac': emit(e.x, e.y, 0.3, 12, [0xffffff, 0x7fd0f0], 3); sfx('hit'); popText('PAC !', e.x, e.y + 0.4, 'is-pac'); F.shake = 0.1; break;
+        case 'pack': emit(e.x, e.y, 0.3, 20, [0xffffff, 0x7fd0f0], 4); sfx('hit'); popText('PACK !', e.x, e.y + 0.5, 'is-pac'); F.shake = 0.2; break;
         case 'swing': sfx('swing'); break;
         case 'throw': sfx('throw'); break;
         case 'jump': sfx('jump'); break;
         case 'sp':
           if (f) {
             specialBanner(f); sfxSpecial(e.id);
-            const say = { shugo: 'summon', quentin: 'drink', victor: 'call', max: 'roar', luca: 'pizza' }[e.id];
+            const say = { shugo: 'summon', quentin: 'drink', victor: 'call', max: 'roar', luca: 'pizza', timichel: 'sweet', rom1michel: 'puff', grandmichel: 'kiai', jeremichel: 'catch', maman: 'pacpack' }[e.id];
             setTimeout(() => popText(tx(say), f.x, 2.4, 'is-say'), 150);
+            // cris à la voix
+            if (Voice && e.id === 'grandmichel') Voice.say([{ text: 'Kiaaaaaaï !', lang: 'fr', pitch: 0.3, rate: 0.75 }]);
+            else if (Voice && e.id === 'maman') setTimeout(() => Voice.say([{ text: 'Pac ! Pack !', lang: 'fr', pitch: 1.4, rate: 1.05 }]), 450);
           }
           break;
         case 'ko': sfx('ko'); banner(tx('ko'), 'is-ko'); F.shake = 0.3; break;
@@ -781,6 +918,7 @@ export function createFight(api) {
     const k = f.actT;
     // objets tenus
     f.bottle.visible = false; f.pizza.visible = false; f.phone.visible = false;
+    f.praline.visible = false; f.roll.visible = false; f.fingers.visible = false; f.jboard.visible = false;
     if (f.horn) f.horn.visible = false;
     const fx = f.fx;
     fx.laptop.visible = false; fx.portal.visible = false; fx.truck.visible = false; fx.stream.visible = false;
@@ -911,11 +1049,64 @@ export function createFight(api) {
         f.pizza.rotation.set(0.6, t * 18, 0, 'YXZ');
         f.pizza.scale.setScalar(lerp(0.8, 1.9, clamp(k / 1.0, 0, 1)));
       } else set({ armZ0: -1.7, armPx: -0.2, torsoZ: 0.3 });
+    } else if (id === 'timichel') {
+      // trois lancers rapides de pralines
+      if (k < 1.45) {
+        const ph = ((k - 0.2 + 0.35) % 0.35) / 0.35;
+        set({ armZ0: lerp(2.4, -1.8, ph), torsoZ: ph < 0.5 ? -0.1 : 0.3 });
+        f.praline.visible = ph < 0.62;
+      } else set({ armZ0: -2.9, armZ1: -2.8, riderY: Math.abs(Math.sin(t * 8)) * 0.06 });
+    } else if (id === 'rom1michel') {
+      const mouthX = f.x + f.face * 0.26, mouthY = 1.68 + f.y, z0 = f.side ? -0.2 : 0.2;
+      if (k < 0.95) {
+        // il tire sur sa roulée
+        set({ armZ0: -2.55, armX0: 0.05, torsoZ: -0.2 });
+        f.roll.visible = true;
+        f.roll.userData.ember.scale.setScalar(0.017 * (1 + Math.abs(Math.sin(t * 9)) * 0.7));
+        if (k > 0.6 && Math.random() < 0.2) smoke.emit(mouthX, mouthY + 0.1, z0, rand(-0.1, 0.1), 0.4, 0, 0.8);
+      } else {
+        set({ armZ0: -1.0, armZ1: -0.6, torsoZ: 0.28, riderY: 0 });
+        f.roll.visible = true;
+        if (k >= 1.05 && k < 2.75) {
+          // gros nuage soufflé vers l'adversaire
+          for (let i = 0; i < 2; i++) smoke.emit(mouthX, mouthY + rand(-0.05, 0.05), z0 + rand(-0.1, 0.1), f.face * rand(3.5, 6.5), rand(-0.4, 0.6), rand(-0.4, 0.4), rand(1.1, 1.8));
+        }
+      }
+    } else if (id === 'grandmichel') {
+      if (k < 0.7) {
+        // il se concentre et charge son énergie
+        set({ torsoZ: -0.4, armZ0: 0.9, armZ1: 0.8, riderY: -0.1 + Math.sin(t * 50) * 0.01, legZ0: -0.45, legZ1: 0.45 });
+        if (Math.random() < 0.7) emit(f.x + rand(-0.5, 0.5), rand(0.2, 2.2), 0.3, 1, [0xffd25a, 0xffffff, 0xff8a2a], 0.8, -2);
+      } else {
+        f.walkT += 0.5;
+        set({ torsoZ: 0.55, armZ0: -1.75, armZ1: -1.65, armPx: -0.3, armX0: -0.1, armX1: 0.1, legZ0: Math.sin(f.walkT) * 0.7, legZ1: -Math.sin(f.walkT) * 0.7 });
+        if (!f.ev.h || F.role === 'guest') if (Math.random() < 0.8) emit(f.x - f.face * 0.4, 0.15, 0.2, 2, [0xffd25a, 0xe8d5b0], 1.4);
+      }
+    } else if (id === 'jeremichel') {
+      if (k < 1.0) {
+        // planche Jam'in brandie au-dessus de la tête
+        set({ armZ0: -3.0, armZ1: -2.95, armX0: 0.25, armX1: -0.25, torsoZ: lerp(0, -0.3, clamp(k, 0, 1)) });
+        f.jboard.visible = true;
+        f.jboard.position.set(0, 2.15 + Math.sin(t * 6) * 0.03, 0);
+        f.jboard.rotation.set(0, f.face > 0 ? 0 : Math.PI, 0.12);
+      } else set({ armZ0: -1.7, armZ1: -1.6, armPx: -0.2, torsoZ: 0.35 });
+    } else if (id === 'maman') {
+      f.fingers.visible = true;
+      const near = Math.abs(o.x - f.x) < 1.25;
+      if (k < 0.35) set({ armZ0: -2.4, armX0: 0.3, torsoZ: -0.15, riderY: Math.sin(t * 30) * 0.02 });
+      else if (near && k > 0.4) {
+        // le truc bizarre avec ses deux doigts
+        set({ armZ0: -1.65, armPx: -0.28 * Math.abs(Math.sin(t * 16)), armX0: Math.sin(t * 22) * 0.35, torsoZ: 0.3, riderY: Math.abs(Math.sin(t * 11)) * 0.05, legZ0: Math.sin(t * 14) * 0.25, legZ1: -Math.sin(t * 14) * 0.25 });
+      } else {
+        f.walkT += 0.45;
+        set({ armZ0: -1.6, armPx: -0.15, torsoZ: 0.35, legZ0: Math.sin(f.walkT) * 0.6, legZ1: -Math.sin(f.walkT) * 0.6 });
+      }
     }
   }
 
   function render(dt) {
     const t = performance.now() / 1000;
+    if (renderer.domElement.style.transform) renderer.domElement.style.transform = ''; // pas de miroir au bar
     const [a, b] = F.fs;
     for (const f of F.fs) {
       if (F.role === 'guest') { // interpolation douce de la position reçue
@@ -927,18 +1118,22 @@ export function createFight(api) {
     poseFighter(a, b, dt, t);
     poseFighter(b, a, dt, t);
     // projectiles
-    let nb = 0, np = 0;
+    const cnt = { beer: 0, pizza: 0, praline: 0, board: 0 };
     for (const p of F.projs) {
-      const o = poolGet(p.k, p.k === 'beer' ? nb++ : np++);
+      const o = poolGet(p.k, cnt[p.k]++);
       o.visible = true;
       o.position.set(p.x, p.y, 0.25);
       if (p.k === 'beer') { o.rotation.set(0, 0, p.r * (p.x > 0 ? 1 : -1)); }
+      else if (p.k === 'praline') { o.rotation.set(p.r, p.r * 0.7, 0); }
+      else if (p.k === 'board') { o.rotation.set(Math.PI / 2, 0, p.r); o.scale.setScalar(1.05); }
       else { o.rotation.set(0.9, p.r, 0, 'YXZ'); o.scale.setScalar(1.8); }
+      if (p.k === 'praline' && Math.random() < 0.3) hearts.emit(p.x, p.y, 0.3, rand(-0.3, 0.3), rand(0.2, 0.8), 0, 0.5);
     }
-    for (let i = nb; i < pool.beer.length; i++) pool.beer[i].visible = false;
-    for (let i = np; i < pool.pizza.length; i++) pool.pizza[i].visible = false;
+    for (const k in pool) for (let i = cnt[k]; i < pool[k].length; i++) pool[k][i].visible = false;
     handleEvents();
     updateParts(dt);
+    smoke.update(dt, 0.35, 0.5);
+    hearts.update(dt, 0.6, 1.2);
     // décor vivant
     for (let i = 0; i < flames.length; i += 2) { flames[i].scale.y = 0.32 + Math.sin(t * 17 + i) * 0.06; flames[i + 1].intensity = 2.3 + Math.sin(t * 13 + i) * 0.5; }
     bulbs.forEach((bb, i) => { bb.visible = Math.sin(t * 2 + i * 0.7) > -0.85; });

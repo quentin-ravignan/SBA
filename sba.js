@@ -3,8 +3,8 @@
  * Three.js (r160) uniquement, toute la géométrie est générée dans le code.
  */
 import * as THREE from 'three';
-import { createFight } from './fight.js?v=20261123';
-import { Net } from './net.js?v=20261117b';
+import { createFight } from './fight.js?v=20261122';
+import { Net } from './net.js?v=20261122';
 
 const GAME_DURATION = 30; // secondes
 const STORAGE_BEST = 'sba-game-best-v1';
@@ -34,6 +34,12 @@ const PLAYERS = [
   { id: 'max', name: 'Max', photo: 'img/max.jpg' },
   { id: 'quentin', name: 'Quentin', photo: 'img/quentin.jpg' },
   { id: 'victor', name: 'Victor', photo: 'img/victor.jpg' },
+  // équipe Michel
+  { id: 'timichel', name: 'TiMichel', photo: 'img/timichel.jpg', team: 'michel' },
+  { id: 'rom1michel', name: 'Rom1Michel', photo: 'img/rom1michel.jpg', team: 'michel' },
+  { id: 'grandmichel', name: 'GrandMichel', photo: 'img/grandmichel.jpg', team: 'michel' },
+  { id: 'jeremichel', name: 'JéréMichel', photo: 'img/jeremichel.jpg', team: 'michel' },
+  { id: 'maman', name: 'Maman', photo: 'img/maman.jpg', team: 'michel' },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -44,9 +50,9 @@ const I18N = {
     ui: {
       backSite: '', canvas: 'Jeu de surf en 3D', loading: 'On décapsule la vague…',
       title1: 'Surf', title2: 'Beer',
-      subtitle: 'Surfe les vagues de Dakar, plaque des figures et ramène un max de bières fraîches à la glacière en 30 secondes. Le club compte sur toi.',
+      subtitle: 'Le SBA contre les Michel : surfe les vagues de Dakar ou de l’Atlantique, plaque des figures, ramène un max de bières fraîches en 30 secondes, puis on règle ça au Secret Bar.',
       play: 'À l’eau !', titleHint: 'Mobile : glisse pour diriger · Ordi : flèches + Espace',
-      step1: 'Étape 1 / 2', step2: 'Étape 2 / 2', chooseSurfer: 'Choisis ton rider', chooseSpot: 'Choisis ton spot',
+      teamSba: 'SBA', teamMichel: 'Michel', shopTitle: 'Choisis ta planche', shopTitleP: '{name} : choisis ta planche', shopHello: 'Salut ! Bienvenue chez Jam’in. Toutes ces planches, je les ai shapées moi-même : prends celle qui te va.', shopOk: 'Je prends celle-là', shopDims: 'Cotes', shopProg: 'Programme', shopShape: 'Shape', shopSurfer: 'Surfer', step1: 'Étape 1 / 2', step2: 'Étape 2 / 2', chooseSurfer: 'Choisis ton rider', chooseSpot: 'Choisis ton spot',
       back: 'Retour', choose: 'Choisir', surfHere: 'On y va', surfers: 'Riders', spots: 'Spots',
       howTitle: 'Comment jouer',
       hSteer: 'Diriger', hSteerTouch: 'Glisse ton doigt à gauche / à droite.', hSteerKbd: 'Flèches ← → ou A / D.', hSteerTxt: 'À gauche, tu montes vers la lèvre de la vague.',
@@ -64,7 +70,7 @@ const I18N = {
       oceanClean: 'Glacière pleine !', wipeout: 'Wipeout !', comboLost: 'Combo renversé', over: 'Au-dessus !',
       inAir: "En l'air !", onLip: 'Sur la lèvre !', countGo: 'Santé !', endPop: 'Fin de session !', pts: 'pts',
       hotspot: 'Pack repéré au loin ! Ton flair le signale en jaune.', hotspotKicker: 'Flair de Max',
-      wave: 'Vague', trash: 'Bières', rocks: 'Rochers', pirogues: 'Pirogues', record: 'Record : ', newRecord: 'Nouveau record du club sur ce spot !',
+      wave: 'Vague', trash: 'Bières', rocks: 'Rochers', pirogues: 'Pirogues', crowd: 'Surfeurs', goRight: 'Droite', goLeft: 'Gauche', record: 'Record : ', newRecord: 'Nouveau record du club sur ce spot !',
       perk: 'Atout', sessionOver: 'Session terminée !', finalScore: 'Score final',
       rTricks: 'Figures', rClean: 'Bières', rCount: 'Bouteilles ramenées', rKg: 'Volume sauvé', rCombo: 'Meilleur combo',
       lesson: 'Le toast de la session', replay: 'Remettre une tournée', discover: '',
@@ -81,6 +87,12 @@ const I18N = {
       hDuo: 'Duo', hDuoKbd: 'J1 : A/Q D, Z/W saut, 1 2 3 figures · J2 : ← →, ↑ saut, J K L figures.', hDuoTouch: 'Chacun sa moitié d’écran : glisse pour diriger, vers le haut pour sauter, tape pour une figure.',
       menu: 'Menu',
     },
+    boards: {
+      bigguy: { prog: 'Tout type de conditions jusqu’à 2 m 50.', shape: 'Ligne polyvalente, tiers avant large et volumes généreux pour le confort de rame, full concave, rail boxy, square tail.', surfer: 'Niveau moyen à confirmé. Shortboard pour les grands gabarits.' },
+      groms: { prog: 'Tout type de conditions.', shape: 'Classic round pintail, concave to double concave, rail boxy léger.', surfer: 'Niveau confirmé.' },
+      clown: { prog: 'Toutes conditions de 50 cm à 2 m.', shape: 'Outline de fish avant, arrière un peu étroit. Carène en full channel, toujours en accélération. Rail couché, boxy et couché sur le pont. Dérive biomimétique home made double foilée. Ce fish aime les vagues creuses et se surfe le poids à fond sur l’arrière : sa glisse est plus proche du twin-fin que du fish. Énorme relance grâce aux dérives stratifiées, cutbacks faciles, les virages s’enroulent tout seuls.', surfer: 'Confirmé et expert.' },
+      egg: { prog: 'Toutes conditions de 50 cm à 2 m.', shape: 'Egg moderne : un avant rond et un arrière de shortboard. Flat to concave to vee double, rounded tail, rail boxy. Un bon compromis entre le confort de l’egg et le comportement d’un shortboard.', surfer: 'Petits gabarits tous niveaux, et confirmés.' },
+    },
     chars: {
       luca: { role: 'Ma che Porco Dio', perk: 'Roi du barrel', perkDesc: 'Figures +25 % de points.',
         bio: 'Toujours le premier au pic et le dernier à sortir. Il a un abonnement au tube.' },
@@ -92,12 +104,26 @@ const I18N = {
         bio: 'Moustache au vent, il ne laisse jamais une bouteille dériver seule.' },
       victor: { role: 'Vroussos Services, binouse à toutes heures', perk: 'Montée de sève', perkDesc: 'Sauts plus hauts et plus longs.',
         bio: 'Gros ressort dans les jambes : il décolle de chaque lèvre comme si c’était la dernière.' },
+      timichel: { role: 'Le confiseur des Sables', perk: 'Douceur sucrée', perkDesc: 'Ton combo met plus de temps à retomber.',
+        bio: 'Bandana, tatouages et poches pleines de pralines : il drague même les vagues.' },
+      rom1michel: { role: 'Le roi de la roulée', perk: 'Vieux loup de mer', perkDesc: 'Remplit la glacière plus vite.',
+        bio: 'Gilet en laine, roulée au bec et zéro stress : la houle attendra qu’il ait fini.' },
+      grandmichel: { role: 'Le maître du budō kaidō', perk: 'Coupe aérodynamique', perkDesc: 'Sauts plus hauts et plus longs.',
+        bio: 'Lunettes noires, coupe Jackson Five et un cri qui fait fuir les goélands.' },
+      jeremichel: { role: 'Le shaper de chez Jam’in', perk: 'Planche maison', perkDesc: 'Figures +25 % de points.',
+        bio: 'Il a une planche pour chaque vague… et une de rechange à lancer sur les autres.' },
+      maman: { role: 'Pac Pack !', perk: 'Les doigts magiques', perkDesc: 'Aimant : attire les bières de plus loin.',
+        bio: 'Casquette à l’envers et une dent en moins : personne ne sait ce que font ses deux doigts.' },
     },
     spots: {
       ouakam: { time: "Fin d'après-midi", desc: 'La gauche du récif sous la mosquée : puissante, à mériter avant l’apéro.' },
       secret: { time: 'Ciel voilé', desc: 'Pointe des Almadies : rapide, creuse, et les rochers ne pardonnent pas.' },
       virage: { time: 'Ciel couvert', desc: 'Le beach break du club : du monde, de l’écume et plein de bouteilles à sauver.' },
       ngor: { time: 'Grand soleil', desc: "La droite de N'gor : longue, douce, parfaite pour enchaîner (les figures)." },
+      sauzaie: { time: 'Ciel de traîne', desc: 'Le reef mythique de Brétignolles : creux, rapide, sur dalle rocheuse. Line-up tendu.' },
+      portbara: { time: 'Ciel chargé', desc: 'Crique de granite de la Côte sauvage : gauche puissante, shore-break et courants.' },
+      budbud: { time: 'Grand bleu', desc: 'Le beach break de Longeville entre dunes et pins : creux, court… et blindé de monde.' },
+      lizay: { time: 'Fin d’après-midi', desc: 'Au bout de l’île de Ré, au pied des grandes dunes, phare des Baleines à l’horizon.' },
     },
     tricks: { cutback: 'Cutback', aerial: 'Aerial', spin: '360' },
     trash: { gazelle: 'Bouteille verte', ambree: 'Ambrée', canette: 'Canette' },
@@ -134,9 +160,9 @@ const I18N = {
     ui: {
       backSite: '', canvas: '3D surf game', loading: 'Popping the cap on the wave…',
       title1: 'Surf', title2: 'Beer',
-      subtitle: 'Surf the waves of Dakar, land tricks and bring as many cold beers back to the cooler as you can in 30 seconds. The club is counting on you.',
+      subtitle: 'SBA against the Michels: surf the waves of Dakar or the Atlantic, land tricks, bring back as many cold beers as you can in 30 seconds, then settle it at the Secret Bar.',
       play: 'Paddle out!', titleHint: 'Mobile: swipe to steer · Computer: arrow keys + Space',
-      step1: 'Step 1 / 2', step2: 'Step 2 / 2', chooseSurfer: 'Pick your rider', chooseSpot: 'Pick your spot',
+      shopTitle: 'Pick your board', shopTitleP: '{name}: pick your board', shopHello: 'Hey! Welcome to Jam’in. I shaped every one of these boards myself: take the one that suits you.', shopOk: 'I’ll take this one', shopDims: 'Dimensions', shopProg: 'Programme', shopShape: 'Shape', shopSurfer: 'Surfer', step1: 'Step 1 / 2', step2: 'Step 2 / 2', chooseSurfer: 'Pick your rider', chooseSpot: 'Pick your spot',
       back: 'Back', choose: 'Choose', surfHere: "Let's go", surfers: 'Riders', spots: 'Spots',
       howTitle: 'How to play',
       hSteer: 'Steer', hSteerTouch: 'Slide your finger left / right.', hSteerKbd: 'Arrow keys ← → or A / D.', hSteerTxt: 'Go left to climb towards the lip of the wave.',
@@ -154,7 +180,7 @@ const I18N = {
       oceanClean: 'Cooler full!', wipeout: 'Wipeout!', comboLost: 'Combo spilled', over: 'Cleared!',
       inAir: 'In the air!', onLip: 'On the lip!', countGo: 'Cheers!', endPop: 'Session over!', pts: 'pts',
       hotspot: 'Six-pack spotted! Your sharp eye marks it in yellow.', hotspotKicker: "Max's radar",
-      wave: 'Wave', trash: 'Beers', rocks: 'Rocks', pirogues: 'Pirogues', record: 'Best: ', newRecord: 'New club record on this spot!',
+      wave: 'Wave', trash: 'Beers', rocks: 'Rocks', pirogues: 'Pirogues', crowd: 'Surfers', goRight: 'Right', goLeft: 'Left', record: 'Best: ', newRecord: 'New club record on this spot!',
       perk: 'Perk', sessionOver: 'Session over!', finalScore: 'Final score',
       rTricks: 'Tricks', rClean: 'Beers', rCount: 'Bottles saved', rKg: 'Volume saved', rCombo: 'Best combo',
       lesson: 'Toast of the session', replay: 'Another round', discover: '',
@@ -171,6 +197,12 @@ const I18N = {
       hDuo: 'Duo', hDuoKbd: 'P1: A/Q D, W/Z jump, 1 2 3 tricks · P2: ← →, ↑ jump, J K L tricks.', hDuoTouch: 'One half of the screen each: slide to steer, swipe up to jump, tap for a trick.',
       menu: 'Menu',
     },
+    boards: {
+      bigguy: { prog: 'All conditions up to 2.5 m.', shape: 'Versatile outline, wide front third and generous volume for easy paddling, full concave, boxy rail, square tail.', surfer: 'Intermediate to advanced. A shortboard for big guys.' },
+      groms: { prog: 'All conditions.', shape: 'Classic round pintail, concave to double concave, light boxy rail.', surfer: 'Advanced.' },
+      clown: { prog: 'All conditions from 50 cm to 2 m.', shape: 'Fish outline up front, slightly narrow tail. Full channel bottom, always accelerating. Low, boxy rails. Home-made double-foiled biomimetic fins. Loves hollow waves, surfed with your weight on the tail: it rides more like a twin-fin than a fish. Huge drive, easy cutbacks, turns that roll on their own.', surfer: 'Advanced and expert.' },
+      egg: { prog: 'All conditions from 50 cm to 2 m.', shape: 'Modern egg: round nose, shortboard tail. Flat to concave to double vee, rounded tail, boxy rail. A good mix of egg comfort and shortboard behaviour.', surfer: 'Smaller surfers of all levels, and advanced.' },
+    },
     chars: {
       luca: { role: 'Ma che Porco Dio', perk: 'Barrel king', perkDesc: 'Tricks score +25%.',
         bio: 'First one at the peak, last one out. He has a season pass to the tube.' },
@@ -182,12 +214,26 @@ const I18N = {
         bio: 'Moustache in the wind, he never lets a bottle drift alone.' },
       victor: { role: 'Vroussos Services, beers at all hours', perk: 'Big hops', perkDesc: 'Higher, longer jumps.',
         bio: 'Springs for legs: he launches off every lip like it is the last one.' },
+      timichel: { role: 'The candy man of Les Sables', perk: 'Sweet tooth', perkDesc: 'Your combo takes longer to drop.',
+        bio: 'Bandana, tattoos and pockets full of pralines: he even flirts with the waves.' },
+      rom1michel: { role: 'King of the roll-up', perk: 'Old sea dog', perkDesc: 'Fills the cooler faster.',
+        bio: 'Wool cardigan, roll-up in his mouth and zero stress: the swell can wait.' },
+      grandmichel: { role: 'Budō kaidō master', perk: 'Aerodynamic hair', perkDesc: 'Higher, longer jumps.',
+        bio: 'Shades, a Jackson Five afro and a shout that scares off the seagulls.' },
+      jeremichel: { role: 'The Jam’in shaper', perk: 'Home-made board', perkDesc: 'Tricks +25% points.',
+        bio: 'He has a board for every wave… and a spare one to throw at people.' },
+      maman: { role: 'Pac Pack!', perk: 'Magic fingers', perkDesc: 'Magnet: pulls beers in from further away.',
+        bio: 'Backwards cap and a missing tooth: nobody knows what his two fingers do.' },
     },
     spots: {
       ouakam: { time: 'Late afternoon', desc: 'The reef left below the mosque: powerful, earn it before happy hour.' },
       secret: { time: 'Hazy sky', desc: 'Almadies point: fast, hollow, and the rocks do not forgive.' },
       virage: { time: 'Overcast', desc: 'The club beach break: crowded, foamy and full of bottles to rescue.' },
       ngor: { time: 'Full sun', desc: 'The N’gor right: long and mellow, perfect for chaining (tricks).' },
+      sauzaie: { time: 'Showery sky', desc: 'Brétignolles’ legendary reef: hollow and fast over rock slabs. Tense line-up.' },
+      portbara: { time: 'Heavy sky', desc: 'Granite cove on the Côte sauvage: powerful left, shore-break and rips.' },
+      budbud: { time: 'Clear blue', desc: 'Longeville’s beach break between dunes and pines: hollow, short… and packed.' },
+      lizay: { time: 'Late afternoon', desc: 'At the tip of Île de Ré, below the big dunes, Baleines lighthouse on the horizon.' },
     },
     tricks: { cutback: 'Cutback', aerial: 'Aerial', spin: '360' },
     trash: { gazelle: 'Green bottle', ambree: 'Amber', canette: 'Can' },
@@ -239,8 +285,56 @@ const CHAR_LOOKS = {
   max: { skin: 0xf1cbae, hair: 'curly', hairColor: 0x9a6a3e, shirt: 0xF2A900, shorts: 0x3A7A93, board: 0x111418, stripe: 0x4CAF2F, perk: 'cooler' },
   quentin: { skin: 0xf3cfb4, hair: 'wavy', hairColor: 0x5a3a22, moustache: true, shirt: 0x4CAF2F, shorts: 0x1d2a33, board: 0x3A7A93, stripe: 0xF2A900, perk: 'magnet' },
   victor: { skin: 0xf2cdb2, hair: 'short', hairColor: 0x6b4a2e, beard: 'stubble', shirt: 0xe98aa6, shorts: 0x3A7A93, board: 0x4CAF2F, stripe: 0xffffff, perk: 'air' },
+  // équipe Michel
+  timichel: { skin: 0xc98a5c, hair: 'bandana', scarf: 0x15151a, hairColor: 0x3a2618, moustache: true, beard: 'stubble', beardOpacity: 0.35, shirt: 0xf4f4f0, shorts: 0x7fa6c9, board: 0xffffff, stripe: 0xd9483b, perk: 'combo' },
+  rom1michel: { skin: 0xd99a6c, hair: 'messy', hairColor: 0x8a5a32, beard: 'stubble', beardOpacity: 0.55, shirt: 0x58703a, shorts: 0xcdb48c, board: 0xF2A900, stripe: 0x58703a, perk: 'cooler' },
+  grandmichel: { skin: 0xcf8a58, hair: 'afro', hairColor: 0x24160e, glasses: true, shirt: 0xcf8a58, shorts: 0x8fb3d4, board: 0xf3ead8, stripe: 0x111418, perk: 'air', height: 1.08 },
+  jeremichel: { skin: 0xd4946a, hair: 'full', hairColor: 0x3d2817, beard: 'stubble', beardOpacity: 0.5, shirt: 0x2b8fd6, shorts: 0xc8b28a, board: 0xe3b778, stripe: 0x111418, perk: 'tricks' },
+  maman: { skin: 0xe6b796, hair: 'capBack', scarf: 0x9aa39a, hairColor: 0x3a2a1c, beard: 'stubble', beardOpacity: 0.45, shirt: 0xe6b796, shorts: 0x2d3a4a, board: 0x7fd0f0, stripe: 0xffffff, perk: 'magnet' },
 };
-const CHARACTERS = PLAYERS.map((p) => Object.assign({}, CHAR_LOOKS[p.id] || {}, p));
+/* Planches du surf shop Jam'in (photos fournies par JéréMichel ; illustration dessinée tant que la photo manque) */
+const BOARDS = [
+  { id: 'bigguy', name: 'The Big Guy’s', dims: '6’6 × 20 ½” × 2 ½”', photo: null, look: { board: 0xf6f3ea, stripe: 0x1f6fd1 } },
+  { id: 'groms', name: 'Grom’s Model', dims: '5’8 × 18 ¾” × 2 5/16”', photo: null, look: { board: 0xf2d81e, stripe: 0x1f8f8a } },
+  { id: 'clown', name: 'The Black Clown', dims: '5’8 × 21” × 2 ½”', photo: null, look: { board: 0x151515, stripe: 0xf4f4f0 } },
+  { id: 'egg', name: 'Pillule Egg', dims: '6’2 × 20” × 2 ½”', photo: null, look: { board: 0xf1ead6, stripe: 0x2a9d93 } },
+];
+const withBoard = (ch, boardId) => {
+  const b = ch && BOARDS.find((x) => x.id === boardId);
+  return b ? Object.assign({}, ch, b.look) : ch;
+};
+// illustration SVG d'une planche posée contre le mur bleu du shop
+function boardSVG(id) {
+  const wall = '<rect width="100" height="300" fill="#3db7e8"/><rect y="282" width="100" height="18" fill="#7d776c"/><rect x="28" y="276" width="44" height="8" fill="#4d9be0"/>';
+  const logo = (x, y, bg) => `<rect x="${x}" y="${y}" width="12" height="14" fill="${bg || '#1b1512'}"/><circle cx="${x + 6}" cy="${y + 5.5}" r="3.6" fill="#f3efe6"/><circle cx="${x + 6}" cy="${y + 5.5}" r="1.1" fill="#1b1512"/><rect x="${x + 2.5}" y="${y + 10.5}" width="7" height="1.4" fill="#f3efe6"/>`;
+  let body = '';
+  if (id === 'bigguy') {
+    const o = 'M50 22 C70 60 72 150 70 230 C69 262 62 276 50 277 C38 276 31 262 30 230 C28 150 30 60 50 22 Z';
+    body = `<defs><clipPath id="cb">${'<path d="' + o + '"/>'}</clipPath><linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0.72" stop-color="#1f6fd1"/><stop offset="1" stop-color="#cfe6ff"/></linearGradient></defs>
+      <path d="${o}" fill="#f6f3ea"/><g clip-path="url(#cb)"><rect x="20" y="176" width="60" height="7" fill="#1f6fd1"/><rect x="20" y="194" width="60" height="10" fill="#1f6fd1"/><rect x="20" y="214" width="60" height="70" fill="url(#gb)"/></g>
+      <line x1="50" y1="24" x2="50" y2="275" stroke="#d9c7a4" stroke-width="0.7"/>${logo(34, 88)}`;
+  } else if (id === 'groms') {
+    const o = 'M50 24 C68 60 70 150 68 220 C66 255 57 274 50 280 C43 274 34 255 32 220 C30 150 32 60 50 24 Z';
+    body = `<defs><linearGradient id="gg" x1="0" y1="0" x2="0" y2="1"><stop offset="0.2" stop-color="#f2e21e"/><stop offset="0.45" stop-color="#7be21e"/><stop offset="0.62" stop-color="#5fd12a"/><stop offset="0.75" stop-color="#1f8f8a"/><stop offset="1" stop-color="#1a7f8a"/></linearGradient></defs>
+      <path d="${o}" fill="url(#gg)"/><line x1="50" y1="26" x2="50" y2="278" stroke="#c9763a" stroke-width="0.7"/>${logo(35, 92)}`;
+  } else if (id === 'clown') {
+    const o = 'M50 26 C72 60 74 150 72 220 C71 250 66 270 60 280 L50 268 L40 280 C34 270 29 250 28 220 C26 150 28 60 50 26 Z';
+    const band = (y, h) => `<path d="M20 ${y} Q35 ${y - 4} 50 ${y} T80 ${y} L80 ${y + h} Q65 ${y + h + 4} 50 ${y + h} T20 ${y + h} Z" fill="#f4f4f0" stroke="#3a9be8" stroke-width="1.4"/>`;
+    body = `<defs><clipPath id="cc"><path d="${o}"/></clipPath></defs><path d="${o}" fill="#141414"/>
+      <g clip-path="url(#cc)">${band(66, 20)}${band(146, 30)}${band(234, 16)}</g>
+      <line x1="50" y1="28" x2="50" y2="266" stroke="#c98a4a" stroke-width="0.6"/>${logo(36, 82, '#4a4642')}`;
+  } else {
+    const o = 'M50 20 C76 22 76 120 74 210 C73 255 64 278 50 280 C36 278 27 255 26 210 C24 120 24 22 50 20 Z';
+    body = `<defs><clipPath id="ce"><path d="${o}"/></clipPath><pattern id="pe" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#6b4a44"/><ellipse cx="5" cy="5" rx="2.4" ry="4" fill="#2aa39a"/><ellipse cx="5" cy="5" rx="1" ry="2" fill="#e8d9a8"/></pattern></defs>
+      <path d="${o}" fill="#6b5148"/><path d="M50 23 C72 25 72 120 71 210 C70 252 62 274 50 276 C38 274 30 252 29 210 C28 120 28 25 50 23 Z" fill="#2aa39a"/>
+      <path d="M50 25 C70 27 70 120 69 210 C68 250 61 272 50 274 C39 272 32 250 31 210 C30 120 30 27 50 25 Z" fill="#f3ecd8"/>
+      <g clip-path="url(#ce)"><path d="M50 205 L75 238 L75 290 L25 290 L25 238 Z" fill="url(#pe)"/></g>
+      <line x1="50" y1="26" x2="50" y2="205" stroke="#c9763a" stroke-width="0.6"/>${logo(34, 74, '#3a1512')}`;
+  }
+  return `<svg viewBox="0 0 100 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">${wall}${body}</svg>`;
+}
+
+const CHARACTERS = PLAYERS.map((p) => Object.assign({ team: 'sba' }, CHAR_LOOKS[p.id] || {}, p));
 
 const SPOTS = [
   {
@@ -280,7 +374,46 @@ const SPOTS = [
     clouds: 14,
     trashMix: { gazelle: 5, ambree: 2, canette: 2 },
   },
+  // ---- spots Michel (côte atlantique) ; right: vague qui déferle à droite (image en miroir) ----
+  {
+    id: 'sauzaie', name: 'La Sauzaie', team: 'michel', right: true,
+    waveH: 7.0, speed: 16, speedGain: 0.5, trashPer100: 6.5, obstPer100: 2.7, obstacle: 'rock',
+    rockColor: 0x3b3631, startClean: 0.2, wave: 4, trashLvl: 1, foam: 0.5, lipSpray: 0.4,
+    sky: ['#5d8fc0', '#a7c3dc', '#e4e7e2'], sun: '#fff6e6', sunI: 2.0, sunDir: [-0.4, 0.6, -0.7], hemi: ['#dfe9f2', '#6a6250'],
+    sand: '#d6c4a0', land: '#8f8670', fog: '#dfe3e2',
+    water: ['#16505e', '#3d9a92'],
+    trashMix: { gazelle: 5, ambree: 2, canette: 2 },
+  },
+  {
+    id: 'portbara', name: 'Port Bara', team: 'michel',
+    waveH: 6.6, speed: 15.5, speedGain: 0.48, trashPer100: 7, obstPer100: 2.4, obstacle: 'rock',
+    rockColor: 0x6f675c, startClean: 0.25, wave: 3, trashLvl: 1, foam: 0.8, lipSpray: 0.5,
+    sky: ['#6e8496', '#a9b6bf', '#d8dbd6'], sun: '#f4f1ea', sunI: 1.5, sunDir: [0.3, 0.7, -0.6], hemi: ['#e2e6e8', '#5e584c'],
+    sand: '#d9c9a4', land: '#8d8676', fog: '#cfd5d6',
+    water: ['#123f52', '#2f8a8f'],
+    clouds: 14,
+    trashMix: { gazelle: 5, ambree: 2, canette: 2 },
+  },
+  {
+    id: 'budbud', name: 'Bud Bud', team: 'michel',
+    waveH: 5.8, speed: 14.5, speedGain: 0.45, trashPer100: 9, obstPer100: 1.6, obstacle: 'surfer',
+    startClean: 0.1, wave: 3, trashLvl: 2, foam: 0.7, lipSpray: 0.2,
+    sky: ['#3f86c8', '#9fc8ea', '#eef3f2'], sun: '#fffaf0', sunI: 2.3, sunDir: [-0.35, 0.7, -0.6], hemi: ['#e8f2fb', '#7a6a48'],
+    sand: '#e6d2a2', land: '#cdb98a', fog: '#e4eef2',
+    water: ['#1a5566', '#46a8a0'],
+    trashMix: { gazelle: 6, ambree: 3, canette: 3 },
+  },
+  {
+    id: 'lizay', name: 'Le Lizay', team: 'michel', right: true,
+    waveH: 5.2, speed: 14, speedGain: 0.35, trashPer100: 8, obstPer100: 2.0, obstacle: 'rock',
+    rockColor: 0x4a463f, startClean: 0.15, wave: 2, trashLvl: 2, foam: 0.6, lipSpray: 0.3,
+    sky: ['#4a8ccc', '#a8cde8', '#f0eadb'], sun: '#fff3dc', sunI: 2.2, sunDir: [-0.3, 0.75, -0.55], hemi: ['#e9f1f8', '#7d6e50'],
+    sand: '#eadcb8', land: '#d8c9a0', fog: '#e8ece6',
+    water: ['#195a6e', '#4ab0aa'],
+    trashMix: { gazelle: 5, ambree: 2, canette: 2 },
+  },
 ];
+const MIR = () => (S.spot && S.spot.right ? -1 : 1); // vague à droite : image et commandes en miroir
 
 // pts = points, kg = volume en litres (estimation ludique)
 const TRASH = {
@@ -634,6 +767,18 @@ function getLogoMat() {
   logoMat = new THREE.MeshLambertMaterial({ map: tex, transparent: true, alphaTest: 0.05 });
   return logoMat;
 }
+let michelLogoMat = null;
+function getMichelLogoMat() {
+  if (michelLogoMat) return michelLogoMat;
+  const tex = new THREE.TextureLoader().load('img/logo-michel-tshirt.png', () => {
+    thumbsDirty = true;
+    if (currentScreen === 'char') buildCharCards();
+  });
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  michelLogoMat = new THREE.MeshLambertMaterial({ map: tex, transparent: true, alphaTest: 0.05 });
+  return michelLogoMat;
+}
 // petit écusson blanc arrondi pour les T-shirts foncés / bleus
 function getPatchMat() {
   if (patchMat) return patchMat;
@@ -800,7 +945,11 @@ function buildSurfer(ch, lite, fighter) {
       const patch = new THREE.Mesh(cached('patch', () => new THREE.PlaneGeometry(0.2, 0.19)), getPatchMat());
       patch.rotation.y = -Math.PI / 2; patch.position.set(-0.141, ly, 0); torso.add(patch);
     }
-    const logo = new THREE.Mesh(cached('logo', () => new THREE.PlaneGeometry(0.17, 0.17 / LOGO_ASPECT)), getLogoMat());
+    // logo SBA pour l'équipe SBA, écusson Michel pour l'équipe Michel
+    const michel = ch.team === 'michel';
+    const logo = michel
+      ? new THREE.Mesh(cached('logoMichel', () => new THREE.PlaneGeometry(0.19, 0.095)), getMichelLogoMat())
+      : new THREE.Mesh(cached('logo', () => new THREE.PlaneGeometry(0.17, 0.17 / LOGO_ASPECT)), getLogoMat());
     logo.rotation.y = -Math.PI / 2; logo.position.set(-0.143, ly, 0); torso.add(logo);
   }
   // cou + tête
@@ -902,6 +1051,28 @@ function buildSurfer(ch, lite, fighter) {
     tufts(10, 0.045, 0.158);
   } else if (ch.hair === 'receding') {
     const c = addCap(0.99, 1.06); c.rotation.z = -0.85;
+  } else if (ch.hair === 'afro') {
+    // grosse coupe afro façon Jackson Five
+    addCap(1.05, 1.15);
+    const afro = new THREE.Mesh(sphereGeo(0.25, 18, 14), hairMat); afro.scale.set(0.72, 0.9, 1.08); afro.position.set(0.1, headY + 0.09, 0); torso.add(afro);
+    const crown = new THREE.Mesh(sphereGeo(0.2, 14, 10), hairMat); crown.scale.set(0.8, 0.6, 1.1); crown.position.set(0.0, headY + 0.17, 0); torso.add(crown);
+    tufts(30, 0.055, 0.2);
+  } else if (ch.hair === 'bandana') {
+    // bandana noué derrière la tête, pointes qui dépassent
+    const sc = mat(ch.scarf || 0x111111, SMOOTH);
+    const band = new THREE.Mesh(capGeo, sc); band.scale.set(1.04, 1.1, 0.98); band.position.set(-0.015, headY + 0.008, 0); band.rotation.z = -0.38; torso.add(band);
+    if (!lite) {
+      const knot = new THREE.Mesh(sphereGeo(0.035, 8, 6), sc); knot.position.set(0.15, headY + 0.02, 0); torso.add(knot);
+      for (const z of [-0.03, 0.03]) { const tail = new THREE.Mesh(sphereGeo(0.05, 8, 6), sc); tail.scale.set(1.5, 0.35, 0.6); tail.position.set(0.21, headY - 0.03, z); tail.rotation.z = -0.6; torso.add(tail); }
+      for (let i = 0; i < 10; i++) { const a = rnd() * Math.PI * 2, b = rnd() * 0.9; const dot = new THREE.Mesh(sphereGeo(0.008, 5, 4), mat(0xffffff, SMOOTH)); dot.position.set(-0.015 + Math.sin(b) * Math.cos(a) * 0.155, headY + 0.01 + Math.cos(b) * 0.17, Math.sin(b) * Math.sin(a) * 0.155); torso.add(dot); }
+    }
+  } else if (ch.hair === 'capBack') {
+    // casquette portée à l'envers, visière dans la nuque
+    addCap(0.99, 1.06);
+    const cm = mat(ch.scarf || 0x888888, SMOOTH);
+    const cap = new THREE.Mesh(capGeo, cm); cap.scale.set(1.06, 0.95, 1.02); cap.position.set(-0.01, headY + 0.03, 0); cap.rotation.z = -0.15; torso.add(cap);
+    const visor = new THREE.Mesh(sphereGeo(0.1, 12, 6), cm); visor.scale.set(0.9, 0.12, 1.15); visor.position.set(0.15, headY + 0.03, 0); visor.rotation.z = 0.35; torso.add(visor);
+    if (!lite) { const strap = new THREE.Mesh(sphereGeo(0.05, 8, 6), mat(0x6d756d, SMOOTH)); strap.scale.set(0.5, 0.4, 1.3); strap.position.set(0.135, headY + 0.07, 0); torso.add(strap); }
   } else if (ch.hair === 'bun') {
     addCap();
     const bun = new THREE.Mesh(sphereGeo(0.07, 10, 8), hairMat); bun.position.set(0.13, headY + 0.1, 0); torso.add(bun);
@@ -916,6 +1087,13 @@ function buildSurfer(ch, lite, fighter) {
     if (ch.beard === 'full') {
       const chin = new THREE.Mesh(sphereGeo(0.05, 10, 8), hairMat); chin.scale.set(0.9, 0.7, 1.4); chin.position.set(-0.13, headY - 0.125, 0); torso.add(chin);
     }
+  }
+  if (!lite && ch.glasses) {
+    // lunettes de soleil type aviateur
+    const gm = new THREE.MeshPhongMaterial({ color: 0x111418, shininess: 120, specular: 0x8899aa });
+    for (const z of [-0.05, 0.05]) { const l = new THREE.Mesh(sphereGeo(0.042, 12, 8), gm); l.scale.set(0.35, 0.85, 1); l.position.set(-0.15, headY + 0.03, z); torso.add(l); }
+    limb(torso, [-0.155, headY + 0.055, -0.03], [-0.155, headY + 0.055, 0.03], 0.006, 0xc9a74a, true, 5);
+    for (const s of [-1, 1]) limb(torso, [-0.15, headY + 0.05, s * 0.085], [0.0, headY + 0.04, s * 0.14], 0.006, 0xc9a74a, true, 5);
   }
   if (!lite && ch.moustache) {
     limb(torso, [-0.158, headY - 0.04, -0.045], [-0.158, headY - 0.04, 0.045], 0.011, hairCol, true, 6);
@@ -960,7 +1138,7 @@ scene.add(shadowG);
 let surfer = null;
 function setSurfer(ch) {
   if (surfer) scene.remove(surfer);
-  surfer = buildSurfer(ch);
+  surfer = buildSurfer(withBoard(ch, S.board));
   scene.add(surfer);
 }
 
@@ -1184,6 +1362,79 @@ function buildNpcSurfer() {
   return s;
 }
 
+/* ---------------- Décor des spots Michel (Atlantique) ---------------- */
+function buildPine(h) {
+  // pin maritime : tronc fin et houppier en parasol
+  const g = new THREE.Group();
+  const tr = mesh(GEO.cyl6, 0x6b4a32); tr.scale.set(0.25, h, 0.25); tr.position.y = h / 2; tr.rotation.z = rand(-0.12, 0.12); g.add(tr);
+  for (let i = 0; i < 3; i++) {
+    const c = mesh(GEO.ico0, pick([0x2f4a2a, 0x36552f, 0x2a4226])); c.scale.set(rand(2.2, 3.2), rand(1.1, 1.6), rand(2.2, 3.2));
+    c.position.set(rand(-0.9, 0.9), h + rand(-0.3, 0.6), rand(-0.9, 0.9)); g.add(c);
+  }
+  return g;
+}
+function buildDune(w, h, d, color) {
+  const g = new THREE.Group();
+  const m = mesh(GEO.hemi, color); m.scale.set(w, h, d); g.add(m);
+  // oyats
+  const n = Math.round(w * d / 6);
+  for (let i = 0; i < n; i++) {
+    const a = rand(0, 6.28), r = rand(0.1, 0.85);
+    const x = Math.cos(a) * r * w, z = Math.sin(a) * r * d, y = h * Math.sqrt(Math.max(0, 1 - r * r));
+    const tuft = mesh(GEO.cone4, pick([0x9aa65a, 0xb3b06a, 0x8a9a52])); tuft.scale.set(0.35, rand(0.7, 1.2), 0.35); tuft.position.set(x, y + 0.3, z); g.add(tuft);
+  }
+  return g;
+}
+function buildFrHouse(w, h, d, roofCol) {
+  // maison vendéenne / rétaise : murs blancs, volets, toit à deux pans
+  const g = new THREE.Group();
+  const b = boxM(w, h, d, 0xf6f3ec); b.position.y = h / 2; g.add(b);
+  const shut = pick([0x3f7f6e, 0x4f86b8, 0x7fa3a0, 0xc9b23a]);
+  for (const z of [-d * 0.25, d * 0.25]) { const sh = boxM(0.1, h * 0.35, d * 0.16, shut); sh.position.set(-w / 2 - 0.04, h * 0.55, z); g.add(sh); }
+  const roof = mesh(GEO.cyl6, roofCol || 0xc8643a); roof.scale.set(w * 0.62, d * 1.04, w * 0.62); roof.rotation.x = Math.PI / 2; roof.position.y = h; g.add(roof);
+  const cover = boxM(w * 1.1, h * 0.1, d * 1.06, 0xf6f3ec); cover.position.y = h - h * 0.05; g.add(cover);
+  return g;
+}
+function buildLifeguard() {
+  // poste de secours sur pilotis avec drapeau
+  const g = new THREE.Group();
+  for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const p = mesh(GEO.cyl6, 0x9a8a72); p.scale.set(0.12, 2.4, 0.12); p.position.set(x, 1.2, z); g.add(p); }
+  const cab = boxM(2.6, 1.8, 2.6, 0xffffff); cab.position.y = 3.2; g.add(cab);
+  const band = boxM(2.65, 0.4, 2.65, 0xd9483b); band.position.y = 3.5; g.add(band);
+  const mast = mesh(GEO.cyl6, 0xdddddd); mast.scale.set(0.06, 3, 0.06); mast.position.set(0, 5.6, 0); g.add(mast);
+  const flag = boxM(0.05, 0.6, 1.0, pick([0x4caf2f, 0xF2A900, 0xd9483b])); flag.position.set(0, 6.7, 0.5); g.add(flag);
+  return g;
+}
+function buildCar() {
+  const g = new THREE.Group();
+  const col = pick([0xd9483b, 0x3a7a93, 0xf2f2f2, 0x222222, 0x8aa0b0, 0xF2A900]);
+  const b = boxM(1.8, 0.7, 4, col); b.position.y = 0.65; g.add(b);
+  const top = boxM(1.6, 0.6, 2.2, col); top.position.set(0, 1.25, -0.2); g.add(top);
+  const glass = boxM(1.62, 0.4, 2.0, 0x23394a); glass.position.set(0, 1.27, -0.2); g.add(glass);
+  if (Math.random() < 0.5) { const board = mesh(GEO.sphere, pick([0xffffff, 0x7fd0f0, 0xF2A900])); board.scale.set(0.3, 0.06, 1.1); board.position.y = 1.62; g.add(board); }
+  return g;
+}
+function buildBaleines() {
+  // phare des Baleines : grande tour octogonale grise, lanterne et coupole sombre
+  const g = new THREE.Group();
+  const base = boxM(9, 3, 9, 0xd8d2c4); base.position.y = 1.5; g.add(base);
+  const tower = mesh(GEO.cyl8, 0xb9b3a6); tower.scale.set(2.6, 40, 2.6); tower.position.y = 23; g.add(tower);
+  const gal = mesh(GEO.cyl8, 0x55575a); gal.scale.set(3.4, 0.6, 3.4); gal.position.y = 43.3; g.add(gal);
+  const lamp = mesh(GEO.cyl8, 0xffe9a0); lamp.scale.set(1.9, 2.4, 1.9); lamp.position.y = 44.8; g.add(lamp);
+  const cap = mesh(GEO.hemi, 0x2f3438); cap.scale.setScalar(2.1); cap.position.y = 46; g.add(cap);
+  const keeper = boxM(10, 4, 6, 0xf2eee6); keeper.position.set(0, 2, 9); g.add(keeper);
+  return g;
+}
+function buildSurfSchool() {
+  // cabane de l'école de surf, planches alignées et drapeaux
+  const g = new THREE.Group();
+  const hut = boxM(4, 3, 6, 0x9b7650); hut.position.y = 1.5; g.add(hut);
+  const roof = boxM(4.6, 0.3, 6.6, 0x3a7a93); roof.position.y = 3.15; g.add(roof);
+  for (let i = 0; i < 6; i++) { const b = mesh(GEO.sphere, pick([0xffffff, 0xF2A900, 0x7fd0f0, 0xd9483b])); b.scale.set(0.35, 1.3, 0.08); b.position.set(-2.3, 1.3, -2.5 + i); b.rotation.x = 0.1; g.add(b); }
+  for (const z of [-4, 4]) { const m = mesh(GEO.cyl6, 0xdddddd); m.scale.set(0.05, 4, 0.05); m.position.set(-1, 2, z); g.add(m); const fl = boxM(0.04, 2, 0.6, pick([0xd9483b, 0xF2A900, 0x3a7a93])); fl.position.set(-1, 3, z + 0.3); g.add(fl); }
+  return g;
+}
+
 /* ---------------- Décor des spots ---------------- */
 const sceneryGroup = new THREE.Group();
 scene.add(sceneryGroup);
@@ -1259,6 +1510,45 @@ function buildScenery(spot) {
     near(10, (z) => addProp(buildHouse(rand(3.5, 6), rand(3, 6), rand(3.5, 6), pick([0xE31B23, 0xFDEF42, 0x0072BC, 0xf08a4b, 0xf2a7c0, 0x00853F, 0xffffff]), Math.random() < 0.2 ? 'dome' : 'flat'), rand(56, 72), 0.4, z, 1, SPAN));
     near(10, (z) => addProp(buildPalm(rand(5, 9)), rand(50, 70), 0.4, z, 1, SPAN));
     boatsAtSea(3);
+  } else if (spot.id === 'sauzaie') {
+    // dalle rocheuse sombre au pic, petite falaise basse, corniche avec maisons, poste de secours et parking
+    near(30, (z) => { const r = mesh(GEO.dodec, pick([0x3b3631, 0x4a433b, 0x2f2b27])); r.scale.set(rand(2, 4.5), rand(0.35, 0.9), rand(2, 4)); r.rotation.y = rand(0, 3); addProp(r, rand(14, 34), 0.05, z, 1, SPAN); });
+    near(14, (z) => { const c = boxM(rand(6, 10), rand(2.5, 4), rand(12, 20), pick([0x5a5148, 0x655b4f, 0x4f473f])); c.rotation.y = rand(-0.15, 0.15); addProp(c, rand(38, 44), c.scale.y / 2 - 0.3, z, 1, SPAN); });
+    near(10, (z) => { const gr = boxM(rand(6, 9), 0.3, rand(10, 16), pick([0x7d8a4a, 0x6f7d42])); addProp(gr, rand(40, 45), 3.6, z, 1, SPAN); });
+    near(1, () => { const road = boxM(7, 0.12, SPAN * 3, 0x5a5b5e); addProp(road, 52, 3.7, -300, 0, 0); });
+    near(10, (z) => addProp(buildCar(), rand(49, 55), 3.7, z, 1, SPAN));
+    near(12, (z) => addProp(buildFrHouse(rand(6, 9), rand(3.5, 5), rand(7, 11), pick([0xc8643a, 0xb85a33, 0xd0703f])), rand(60, 76), 3.7, z, 1, SPAN));
+    near(2, (z) => addProp(buildLifeguard(), 42, 3.7, z, 1, SPAN));
+    near(6, (z) => addProp(buildPine(rand(6, 9)), rand(80, 92), 3.7, z, 1, SPAN));
+    near(8, (z) => addProp(buildNpcSurfer(), rand(10, 20), -0.05, z, 1, SPAN, true));
+  } else if (spot.id === 'portbara') {
+    // crique de sable encaissée entre de hautes falaises de granite déchiquetées, lande rase, hameau au loin
+    near(26, (z) => { const r = buildRock(pick([0x6f675c, 0x5e574d, 0x7a7062])); r.scale.setScalar(rand(1.2, 2.8)); addProp(r, rand(16, 34), 0, z, 1, SPAN); });
+    near(20, (z) => {
+      const h = rand(7, 15);
+      const c = boxM(rand(7, 12), h, rand(9, 16), pick([0x857a68, 0x968a72, 0x7a7060, 0x8e8270]));
+      c.rotation.set(rand(-0.08, 0.08), rand(-0.4, 0.4), rand(-0.12, 0.12));
+      addProp(c, rand(36, 52), h / 2 - 0.5, z, 1, SPAN);
+      const top = boxM(c.scale.x * 1.02, 0.4, c.scale.z * 1.02, pick([0x7f7a42, 0x8a6f4a, 0x6f7a3c])); top.rotation.y = c.rotation.y;
+      addProp(top, c.position.x, h - 0.3, z, 1, SPAN);
+    });
+    near(10, (z) => { const g = boxM(rand(10, 18), 0.6, rand(14, 22), pick([0x7f7a42, 0x8a7a4a, 0x6f7a3c])); addProp(g, rand(56, 80), 12.5, z, 1, SPAN); });
+    near(6, (z) => addProp(buildFrHouse(rand(6, 8), rand(3, 4), rand(7, 10), 0x3d4650), rand(66, 84), 12.8, z, 1, SPAN));
+    near(4, (z) => addProp(buildNpcSurfer(), rand(12, 20), -0.05, z, 1, SPAN, true));
+  } else if (spot.id === 'budbud') {
+    // plage rectiligne à perte de vue, dunes à oyats, grande forêt de pins maritimes, école de surf
+    near(14, (z) => addProp(buildDune(rand(6, 10), rand(3, 5.5), rand(10, 16), pick([0xe3cf9e, 0xdcc794, 0xe8d6a8])), rand(36, 44), 0.2, z, 1, SPAN));
+    near(60, (z) => addProp(buildPine(rand(8, 13)), rand(47, 95), 0.3, z, 1, SPAN));
+    near(2, (z) => addProp(buildSurfSchool(), 33, 0.3, z, 1, SPAN));
+    near(14, (z) => addProp(buildNpcSurfer(), rand(10, 24), -0.05, z, 1, SPAN, true));
+  } else if (spot.id === 'lizay') {
+    // grande plage claire, les plus hautes dunes de l'île, rochers à la pointe, phare des Baleines au loin
+    near(22, (z) => { const r = buildRock(pick([0x4a463f, 0x57524a])); r.scale.setScalar(rand(1, 2.2)); addProp(r, rand(14, 30), 0, z, 1, SPAN); });
+    near(16, (z) => addProp(buildDune(rand(9, 14), rand(6, 10), rand(12, 20), pick([0xeadcb8, 0xe2d2a8, 0xefe2c2])), rand(38, 52), 0.2, z, 1, SPAN));
+    near(14, (z) => addProp(buildPine(rand(7, 11)), rand(62, 90), 0.3, z, 1, SPAN));
+    near(2, (z) => { const h = boxM(5, 3, 7, 0x9b7650); h.position.y = 1.5; const g = new THREE.Group(); g.add(h); const r = boxM(5.6, 0.3, 7.6, 0x5a4a3a); r.position.y = 3.15; g.add(r); addProp(g, 56, 0.3, z, 1, SPAN); });
+    addProp(buildBaleines(), 150, 0, -330, 0.06, 900);
+    near(5, (z) => addProp(buildNpcSurfer(), rand(12, 20), -0.05, z, 1, SPAN, true));
   }
   // nuages
   const nClouds = spot.clouds || 8;
@@ -1502,6 +1792,10 @@ function spawnObstacle(z) {
     obj = buildRock(S.spot.rockColor);
     x = rand(XL + 2, XT + 4);
     rad = obj.userData.r * 0.9; top = obj.userData.r * 0.9; halfZ = rad;
+  } else if (type === 'surfer') {
+    obj = buildNpcSurfer();
+    x = rand(XT - 4, XT + 5);
+    rad = 0.8; top = 1.1; halfZ = 1.3;
   } else {
     obj = buildPirogue();
     x = rand(XT - 4, XT + 6);
@@ -1588,7 +1882,7 @@ function updateP2(dt) {
   if (P2.wipe > 0) { P2.wipe -= dt; P2.vx *= 0.9; }
   else if (P2.touchTarget !== null) P2.vx = clamp((P2.touchTarget - P2.x) * 9, -14, 14);
   else {
-    const steer = (P2.keys.left ? -1 : 0) + (P2.keys.right ? 1 : 0);
+    const steer = ((P2.keys.left ? -1 : 0) + (P2.keys.right ? 1 : 0)) * MIR();
     P2.vx = lerp(P2.vx, steer * 11, Math.min(1, dt * (steer ? 6 : 3)));
   }
   if (!P2.air && P2.wipe <= 0 && P2.x < XT) P2.vx += 2.2 * dt * (P2.touchTarget === null ? 1 : 0.3);
@@ -1650,7 +1944,7 @@ function floatText2(text, isTrash) {
   const el = document.createElement('span');
   el.className = 'float-pts is-p2' + (isTrash ? ' is-trash' : '');
   el.textContent = text;
-  el.style.left = ((projV.x * 0.5 + 0.5) * window.innerWidth + rand(-20, 20)) + 'px';
+  el.style.left = ((projV.x * MIR() * 0.5 + 0.5) * window.innerWidth + rand(-20, 20)) + 'px';
   el.style.top = ((-projV.y * 0.5 + 0.5) * window.innerHeight) + 'px';
   ui.floatLayer.appendChild(el);
   setTimeout(() => el.remove(), 850);
@@ -1725,7 +2019,7 @@ function duoMove(e) {
   if (!d) return;
   const R = d.p === 1 ? S : P2;
   const w = Math.max(160, window.innerWidth / 2);
-  const dx = e.clientX - d.sx;
+  const dx = (e.clientX - d.sx) * MIR();
   if (Math.abs(dx) > 10 || Math.abs(e.clientY - d.sy) > 10) d.moved = true;
   if (d.moved) R.touchTarget = clamp(d.sxS + dx * ((X_MAX - X_MIN) / (w * 0.8)), X_MIN, X_MAX);
   const now = performance.now();
@@ -1763,7 +2057,7 @@ canvas.addEventListener('pointermove', (e) => {
   if (S.gameMode === 'local') { if (S.mode === 'play') duoMove(e); return; }
   if (e.pointerId !== touch.id || S.mode !== 'play') return;
   const w = Math.max(320, window.innerWidth);
-  const dx = e.clientX - touch.sx;
+  const dx = (e.clientX - touch.sx) * MIR();
   S.touchTarget = clamp(touch.sxSurfer + dx * ((X_MAX - X_MIN) / (w * 0.7)), X_MIN, X_MAX);
   // swipe vers le haut = saut
   const now = performance.now();
@@ -1915,7 +2209,7 @@ function updateGame(dt) {
     const desired = (S.touchTarget - S.x) * 9;
     S.vx = clamp(desired, -14, 14);
   } else {
-    const steer = (keys.left ? -1 : 0) + (keys.right ? 1 : 0);
+    const steer = ((keys.left ? -1 : 0) + (keys.right ? 1 : 0)) * MIR();
     const targetV = steer * 11;
     S.vx = lerp(S.vx, targetV, Math.min(1, dt * (steer ? 6 : 3)));
   }
@@ -2186,7 +2480,7 @@ function floatText(text, isTrash) {
   const el = document.createElement('span');
   el.className = 'float-pts' + (isTrash ? ' is-trash' : '');
   el.textContent = text;
-  el.style.left = ((projV.x * 0.5 + 0.5) * window.innerWidth + rand(-20, 20)) + 'px';
+  el.style.left = ((projV.x * MIR() * 0.5 + 0.5) * window.innerWidth + rand(-20, 20)) + 'px';
   el.style.top = ((-projV.y * 0.5 + 0.5) * window.innerHeight) + 'px';
   ui.floatLayer.appendChild(el);
   setTimeout(() => el.remove(), 850);
@@ -2248,7 +2542,15 @@ function buildCharCards() {
   const thumbs = thumbCache;
   const grid = $('#char-grid');
   grid.innerHTML = '';
+  let team = null;
   for (const ch of CHARACTERS) {
+    if (ch.team !== team) {
+      team = ch.team;
+      const h = document.createElement('p');
+      h.className = 'team-head team-' + team;
+      h.textContent = t(team === 'michel' ? 'ui.teamMichel' : 'ui.teamSba');
+      grid.appendChild(h);
+    }
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'card';
@@ -2280,7 +2582,16 @@ function selectChar(ch) {
 function buildSpotCards() {
   const grid = $('#spot-grid');
   grid.innerHTML = '';
+  let team = null;
   for (const sp of SPOTS) {
+    const tm = sp.team || 'sba';
+    if (tm !== team) {
+      team = tm;
+      const h = document.createElement('p');
+      h.className = 'team-head team-' + tm;
+      h.textContent = t(tm === 'michel' ? 'ui.teamMichel' : 'ui.teamSba');
+      grid.appendChild(h);
+    }
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'card spot-card';
@@ -2289,7 +2600,7 @@ function buildSpotCards() {
     const dots = (n) => '●'.repeat(n) + '○'.repeat(Math.max(0, 4 - n));
     b.innerHTML = `<span class="thumb" style="background:linear-gradient(180deg, ${sp.sky[0]} 0%, ${sp.sky[1]} 45%, ${sp.sky[2]} 62%, #1d8fae 63%, #0b5f86 100%)"><span class="spot-time"></span></span>
       <span class="card-body"><span class="name"></span><span class="desc"></span>
-      <span class="meta"><span>${t('ui.wave')} ${dots(sp.wave)}</span><span>${t('ui.trash')} ${dots(sp.trashLvl)}</span><span>${sp.obstacle === 'rock' ? t('ui.rocks') : t('ui.pirogues')}</span></span>
+      <span class="meta"><span>${t('ui.wave')} ${dots(sp.wave)}</span><span>${t('ui.trash')} ${dots(sp.trashLvl)}</span><span>${sp.obstacle === 'rock' ? t('ui.rocks') : sp.obstacle === 'surfer' ? t('ui.crowd') : t('ui.pirogues')}</span>${sp.team === 'michel' ? `<span>${sp.right ? t('ui.goRight') : t('ui.goLeft')}</span>` : ''}</span>
       <span class="best"></span></span>`;
     b.querySelector('.spot-time').textContent = t(`spots.${sp.id}.time`);
     b.querySelector('.name').textContent = sp.name;
@@ -2557,14 +2868,60 @@ function charOk() {
     return;
   }
   S.pickFor = 1;
+  openShop(1);
+}
+/* ---------------- Surf shop Jam'in ---------------- */
+function openShop(n) {
+  S.shopFor = n;
+  const cur = n === 2 ? S.board2 : S.board;
+  const title = $('#shop-title');
+  title.textContent = S.gameMode === 'local' ? t('ui.shopTitleP').replace('{name}', (n === 2 ? S.char2 : S.char).name) : t('ui.shopTitle');
+  $('#shop-bubble').textContent = t('ui.shopHello');
+  const grid = $('#shop-grid');
+  grid.innerHTML = '';
+  for (const b of BOARDS) {
+    const el = document.createElement('button');
+    el.type = 'button'; el.className = 'shop-card'; el.dataset.id = b.id; el.setAttribute('role', 'radio');
+    el.innerHTML = `<span class="shop-pic">${b.photo ? `<img alt="" src="${b.photo}">` : boardSVG(b.id)}</span><span class="shop-name"></span><span class="shop-dims"></span>`;
+    el.querySelector('.shop-name').textContent = b.name;
+    el.querySelector('.shop-dims').textContent = b.dims;
+    el.addEventListener('click', () => selectBoard(b.id));
+    el.addEventListener('dblclick', () => { selectBoard(b.id); shopOk(); });
+    grid.appendChild(el);
+  }
+  selectBoard(cur || 'bigguy');
+  showScreen('shop');
+}
+function selectBoard(id) {
+  if (S.shopFor === 2) S.board2 = id; else S.board = id;
+  for (const c of $$('#shop-grid .shop-card')) c.setAttribute('aria-checked', String(c.dataset.id === id));
+  const b = BOARDS.find((x) => x.id === id);
+  const d = $('#shop-detail');
+  d.innerHTML = '<h3></h3><dl></dl>';
+  d.querySelector('h3').textContent = b.name;
+  const dl = d.querySelector('dl');
+  for (const [k, v] of [['ui.shopDims', b.dims], ['ui.shopProg', t(`boards.${id}.prog`)], ['ui.shopShape', t(`boards.${id}.shape`)], ['ui.shopSurfer', t(`boards.${id}.surfer`)]]) {
+    const dt = document.createElement('dt'); dt.textContent = t(k);
+    const dd = document.createElement('dd'); dd.textContent = v;
+    dl.append(dt, dd);
+  }
+  if (S.shopFor !== 2) setSurfer(S.char);
+}
+function shopOk() {
+  if (S.gameMode === 'local' && S.shopFor === 1) { openShop(2); return; }
   setSurfer(S.char);
-  if (S.gameMode === 'local') setP2(S.char2);
+  if (S.gameMode === 'local') setP2(withBoard(S.char2, S.board2));
   if (S.gameMode === 'online') {
-    Net.send({ t: 'char', id: S.char.id });
+    Net.send({ t: 'char', id: S.char.id, b: S.board });
     if (Net.role !== 'host') { showWait(t('ui.waitHostSpot')); return; }
   }
   buildSpotCards(); showScreen('spot');
 }
+$('#btn-shop-ok').addEventListener('click', shopOk);
+$('#btn-shop-back').addEventListener('click', () => {
+  if (S.gameMode === 'local' && S.shopFor === 2) { openShop(1); return; }
+  openChars(S.gameMode === 'local' ? 2 : 1);
+});
 function enterHowto() {
   const go = $('#btn-go');
   const guest = S.gameMode === 'online' && Net.role === 'guest';
@@ -2576,7 +2933,56 @@ function showWait(text) {
   $('#wait-text').textContent = text;
   showScreen('wait');
 }
-$('#btn-start').addEventListener('click', () => showScreen('mode'));
+/* ---------------- Voix (synthèse vocale du navigateur) ---------------- */
+const Voice = {
+  voices: [],
+  load() {
+    const ss = window.speechSynthesis;
+    if (!ss) return;
+    const upd = () => { this.voices = ss.getVoices() || []; };
+    upd();
+    if (ss.addEventListener) ss.addEventListener('voiceschanged', upd);
+  },
+  // voix masculine de préférence (grave), sinon la première de la langue
+  pick(lang) {
+    const vs = this.voices.filter((v) => v.lang && v.lang.toLowerCase().startsWith(lang));
+    const male = /(male|homme|david|daniel|fred|alex|thomas|guy|christopher|eric|mark|arthur|paul|henri|george|ryan|aaron|rocko|reed|grandpa)/i;
+    return vs.find((v) => male.test(v.name) && !/female/i.test(v.name)) || vs[0] || null;
+  },
+  // parts : [{ text, lang, pitch, rate, at(start) }]
+  say(parts) {
+    const ss = window.speechSynthesis;
+    if (!ss || !Sound.enabled) return false;
+    try {
+      ss.cancel();
+      for (const p of parts) {
+        const u = new SpeechSynthesisUtterance(p.text);
+        const lang = p.lang || 'en';
+        u.lang = lang === 'fr' ? 'fr-FR' : 'en-US';
+        const v = this.pick(lang); if (v) u.voice = v;
+        u.pitch = p.pitch ?? 0.1; u.rate = p.rate ?? 0.8; u.volume = 1;
+        if (p.onstart) u.onstart = p.onstart;
+        ss.speak(u);
+      }
+      return true;
+    } catch (e) { return false; }
+  },
+};
+Voice.load();
+// « SBA… vs… Michel ! » façon bande-annonce : voix grave + impacts
+function announceTitle() {
+  if (!Sound.enabled) return;
+  Sound.unlock();
+  const boom = (f) => { Sound.tone(f, 1.3, 'sawtooth', 0.22, -18); Sound.tone(f / 2, 1.6, 'sine', 0.35, -10); Sound.noise(0.9, 160, 0.4); };
+  boom(70);
+  const ok = Voice.say([
+    { text: 'S. B. A.', pitch: 0.05, rate: 0.62, onstart: () => boom(62) },
+    { text: 'versus', pitch: 0.1, rate: 0.7 },
+    { text: 'Michel!', pitch: 0.05, rate: 0.6, onstart: () => { boom(55); setTimeout(() => Sound.noise(1.4, 90, 0.35), 200); } },
+  ]);
+  if (!ok) setTimeout(() => boom(55), 600);
+}
+$('#btn-start').addEventListener('click', () => { announceTitle(); showScreen('mode'); });
 for (const b of $$('.mode-btn')) {
   b.addEventListener('click', () => {
     setMode(b.dataset.mode);
@@ -2638,7 +3044,7 @@ Net.onMessage = (m) => {
   if (fight.onNet(m)) return;
   switch (m.t) {
     case 'char': {
-      const ch = CHARACTERS.find((c) => c.id === m.id);
+      const ch = withBoard(CHARACTERS.find((c) => c.id === m.id), m.b);
       if (ch) { setP2(ch); if (currentScreen === 'howto' && Net.role === 'host') $('#btn-go').textContent = t('ui.go'); }
       break;
     }
@@ -2763,6 +3169,8 @@ function tick(dt) {
   }
   updateCamera(dt, S.mode === 'menu' || S.mode === 'loading');
   if (playing || S.mode === 'countdown' || S.mode === 'intro') updateHud();
+  const mirT = MIR() < 0 ? 'scaleX(-1)' : '';
+  if (renderer.domElement.style.transform !== mirT) renderer.domElement.style.transform = mirT;
   renderer.render(scene, camera);
 }
 
@@ -2795,7 +3203,10 @@ window.addEventListener('storage', (e) => {
   if (e.key === 'sba-lang' && LANGS.includes(e.newValue) && e.newValue !== LANG) { LANG = e.newValue; applyLang(); }
 });
 
-const fight = createFight({ THREE, renderer, buildSurfer, buildTrash, buildPalm, Sound, getLang: () => LANG, isTouch, reducedMotion });
+const fight = createFight({ THREE, renderer, buildSurfer, buildTrash, buildPalm, Sound, Voice, getLang: () => LANG, isTouch, reducedMotion });
+
+// Accès de test (seulement avec ?debug dans l'adresse)
+if (/[?&]debug/.test(location.search)) window.SBA = { fight, S, CHARACTERS, SPOTS, launchFight, applySpot, setMode: (m) => setMode(m) };
 
 // Démarrage
 applyLang();
