@@ -292,12 +292,12 @@ const CHAR_LOOKS = {
   jeremichel: { skin: 0xd4946a, hair: 'full', hairColor: 0x3d2817, beard: 'stubble', beardOpacity: 0.5, shirt: 0x2b8fd6, shorts: 0xc8b28a, board: 0xe3b778, stripe: 0x111418, perk: 'tricks' },
   maman: { skin: 0xe6b796, hair: 'capBack', scarf: 0x9aa39a, hairColor: 0x3a2a1c, beard: 'stubble', beardOpacity: 0.45, shirt: 0xe6b796, shorts: 0x2d3a4a, board: 0x7fd0f0, stripe: 0xffffff, perk: 'magnet' },
 };
-/* Planches du surf shop Jam'in (photos fournies par JéréMichel ; illustration dessinée tant que la photo manque) */
+/* Planches du surf shop Jam'in (photos de jamin-surfboards.com, avec l'accord de JéréMichel ; illustration dessinée si la photo manque) */
 const BOARDS = [
-  { id: 'bigguy', name: 'The Big Guy’s', dims: '6’6 × 20 ½” × 2 ½”', photo: null, look: { board: 0xf6f3ea, stripe: 0x1f6fd1 } },
-  { id: 'groms', name: 'Grom’s Model', dims: '5’8 × 18 ¾” × 2 5/16”', photo: null, look: { board: 0xf2d81e, stripe: 0x1f8f8a } },
-  { id: 'clown', name: 'The Black Clown', dims: '5’8 × 21” × 2 ½”', photo: null, look: { board: 0x151515, stripe: 0xf4f4f0 } },
-  { id: 'egg', name: 'Pillule Egg', dims: '6’2 × 20” × 2 ½”', photo: null, look: { board: 0xf1ead6, stripe: 0x2a9d93 } },
+  { id: 'bigguy', name: 'The Big Guy’s', dims: '6’6 × 20 ½” × 2 ½”', photo: 'img/boards/bigguy.jpg', look: { board: 0xf6f3ea, stripe: 0x1f6fd1 } },
+  { id: 'groms', name: 'Grom’s Model', dims: '5’8 × 18 ¾” × 2 5/16”', photo: 'img/boards/groms.jpg', look: { board: 0xf2d81e, stripe: 0x1f8f8a } },
+  { id: 'clown', name: 'The Black Clown', dims: '5’8 × 21” × 2 ½”', photo: 'img/boards/clown.jpg', look: { board: 0x151515, stripe: 0xf4f4f0 } },
+  { id: 'egg', name: 'Pillule Egg', dims: '6’2 × 20” × 2 ½”', photo: 'img/boards/egg.jpg', look: { board: 0xf1ead6, stripe: 0x2a9d93 } },
 ];
 const withBoard = (ch, boardId) => {
   const b = ch && BOARDS.find((x) => x.id === boardId);

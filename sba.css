@@ -859,7 +859,7 @@ body.is-duo .hint-drag { display: none; }
 @media (min-width: 700px) { .shop-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .shop-card { display: grid; gap: 4px; padding: 8px; border-radius: 14px; border: 2px solid rgba(255,255,255,.15); background: rgba(255,255,255,.05); color: var(--white); cursor: pointer; text-align: center; font: inherit; }
 .shop-card[aria-checked="true"] { border-color: #3db7e8; background: rgba(61,183,232,.14); box-shadow: 0 0 0 3px rgba(61,183,232,.25); }
-.shop-pic { display: block; aspect-ratio: 1 / 2; border-radius: 10px; overflow: hidden; background: #3db7e8; }
+.shop-pic { display: block; aspect-ratio: 2 / 3; border-radius: 10px; overflow: hidden; background: #3db7e8; }
 .shop-pic svg, .shop-pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .shop-name { font-family: var(--font-title); font-weight: 800; font-size: 19px; text-transform: uppercase; line-height: 1.05; }
 .shop-dims { font-size: 13px; color: #cbd8dc; }
@@ -868,3 +868,5 @@ body.is-duo .hint-drag { display: none; }
 .shop-detail dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 0; font-size: 14px; }
 .shop-detail dt { font-weight: 700; color: var(--yellow); }
 .shop-detail dd { margin: 0; color: #e3ecef; }
+
+.shop-logo { display: block; height: 56px; width: auto; }
